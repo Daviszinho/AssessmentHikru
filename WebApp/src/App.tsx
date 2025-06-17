@@ -139,25 +139,63 @@ function App() {
 
   const handleUpdate = async (id: string, updatedPosition: Position) => {
     try {
+      // Convert string IDs to numbers and validate
+      const recruiterId = Number(updatedPosition.recruiterId);
+      const departmentId = Number(updatedPosition.departmentId);
+      const budget = Number(updatedPosition.budget);
+
+      // Validate number conversion
+      if (isNaN(recruiterId) || isNaN(departmentId) || isNaN(budget)) {
+        throw new Error('Invalid number format in position data');
+      }
+
+      // Format date if present
+      const closingDate = updatedPosition.closingDate 
+        ? new Date(updatedPosition.closingDate).toISOString().split('T')[0]
+        : null;
+
+      // Create a properly typed position object with all required fields
+      const positionToUpdate = {
+        ...updatedPosition,
+        recruiterId,
+        departmentId,
+        budget,
+        status: updatedPosition.status || 'draft', // Ensure status has a default value
+        closingDate: closingDate || null
+      };
+
+      console.log('Sending update request:', { id, positionToUpdate });
+      
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify(updatedPosition),
+        mode: 'cors',
+        credentials: 'include',
+        body: JSON.stringify(positionToUpdate),
       });
       
+      const responseData = await response.json();
+      console.log('Update response:', { status: response.status, data: responseData });
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorMessage = responseData?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
       }
       
-      const data = await response.json();
+      // Update the positions list with the updated position
       setPositions(prev => 
-        prev.map(pos => pos.id === id ? data : pos)
+        prev.map(pos => pos.id === id ? { ...responseData } : pos)
       );
+      
+      return responseData;
     } catch (err) {
       console.error('Error updating position:', err);
-      setError('Failed to update position. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update position';
+      setError(`Error: ${errorMessage}`);
+      throw err; // Re-throw to be handled by the caller
     }
   };
 

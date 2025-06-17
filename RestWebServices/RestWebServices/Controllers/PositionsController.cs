@@ -42,9 +42,34 @@ namespace RestWebServices.Controllers
             return position;
         }
 
+        // PUT: api/positions/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePosition(int id, [FromBody] Position position)
+        {
+            if (id != position.Id)
+            {
+                return BadRequest("ID in URL does not match ID in the request body");
+            }
+
+            try
+            {
+                var success = await _positionRepository.UpdatePositionAsync(position);
+                if (!success)
+                {
+                    return NotFound(new { message = "Position not found or update failed" });
+                }
+                return Ok(position);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating position with ID {PositionId}", id);
+                return StatusCode(500, new { message = "An error occurred while updating the position", error = ex.Message });
+            }
+        }
+
         // POST: api/positions
         [HttpPost]
-        public async Task<ActionResult<Position>> PostPosition(Position position)
+        public async Task<ActionResult<Position>> PostPosition([FromBody] Position position)
         {
             try
             {
@@ -53,35 +78,16 @@ namespace RestWebServices.Controllers
                 {
                     return CreatedAtAction(nameof(GetPosition), new { id = position.Id }, position);
                 }
-                return BadRequest("Failed to create position");
+                return BadRequest(new { message = "Failed to create position" });
             }
             catch (NotImplementedException)
             {
-                return StatusCode(501, "Position creation is not yet implemented");
+                return StatusCode(501, new { message = "Position creation is not yet implemented" });
             }
-        }
-
-        // PUT: api/positions/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutPosition(int id, Position position)
-        {
-            if (id != position.Id)
+            catch (Exception ex)
             {
-                return BadRequest("Position ID mismatch");
-            }
-
-            try
-            {
-                var success = await _positionRepository.UpdatePositionAsync(position);
-                if (success)
-                {
-                    return NoContent();
-                }
-                return NotFound();
-            }
-            catch (NotImplementedException)
-            {
-                return StatusCode(501, "Position update is not yet implemented");
+                _logger.LogError(ex, "Error creating position");
+                return StatusCode(500, new { message = "An error occurred while creating the position", error = ex.Message });
             }
         }
 

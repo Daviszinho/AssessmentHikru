@@ -9,10 +9,10 @@ export interface Position {
   description: string;
   location: string;
   status: Status;
-  recruiterId: string;
-  departmentId: string;
+  recruiterId: number | string; // Can be number or string for form handling
+  departmentId: number | string; // Can be number or string for form handling
   budget: number;
-  closingDate?: string;
+  closingDate?: string | null; // Allow null for form handling
 }
 
 interface PositionTableProps {
@@ -48,13 +48,28 @@ const PositionTable: React.FC<PositionTableProps> = ({
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewPosition(prev => ({
-      ...prev,
-      [name]: name === 'budget' ? Number(value) : value,
-    }));
+    const { name, value, type } = e.target;
+    
+    setNewPosition(prev => {
+      // Handle different input types
+      let newValue: string | number = value;
+      
+      if (type === 'number') {
+        newValue = value === '' ? '' : Number(value);
+      } else if (type === 'date') {
+        // For date inputs, we want to keep the raw string value
+        // but ensure it's in the correct format for the date input
+        newValue = value || '';
+      }
+      
+      return {
+        ...prev,
+        [name]: newValue,
+      };
+    });
   };
 
   const handleAddClick = () => {
@@ -65,9 +80,19 @@ const PositionTable: React.FC<PositionTableProps> = ({
   };
 
   const handleEditClick = (idx: number) => {
+    const positionToEdit = positions[idx];
+    
+    // Format the date for the date input (YYYY-MM-DD)
+    const formattedPosition = {
+      ...positionToEdit,
+      closingDate: positionToEdit.closingDate 
+        ? new Date(positionToEdit.closingDate).toISOString().split('T')[0]
+        : ''
+    };
+    
     setShowAddForm(true);
     setEditIndex(idx);
-    setNewPosition(positions[idx]);
+    setNewPosition(formattedPosition);
     setError(null);
   };
 
@@ -89,17 +114,31 @@ const PositionTable: React.FC<PositionTableProps> = ({
     }
   };
 
-  const handleAddConfirm = () => {
+  const handleAddConfirm = async () => {
     // Validation
-    if (
-      !newPosition.title.trim() ||
-      !newPosition.description.trim() ||
-      !newPosition.location.trim() ||
-      !newPosition.recruiterId.trim() ||
-      !newPosition.departmentId.trim() ||
-      !newPosition.budget
-    ) {
-      setError('Please fill all required fields.');
+    // Check required fields
+    if (!newPosition.title.trim()) {
+      setError('Title is required.');
+      return;
+    }
+    if (!newPosition.description.trim()) {
+      setError('Description is required.');
+      return;
+    }
+    if (!newPosition.location.trim()) {
+      setError('Location is required.');
+      return;
+    }
+    if (!newPosition.recruiterId) {
+      setError('Recruiter is required.');
+      return;
+    }
+    if (!newPosition.departmentId) {
+      setError('Department is required.');
+      return;
+    }
+    if (!newPosition.budget && newPosition.budget !== 0) {
+      setError('Budget is required.');
       return;
     }
     if (newPosition.title.length > 100) {
@@ -110,23 +149,90 @@ const PositionTable: React.FC<PositionTableProps> = ({
       setError('Description must be at most 1000 characters.');
       return;
     }
-    setError(null);
     
-    if (editIndex !== null) {
-      const positionToUpdate = positions[editIndex];
-      if (positionToUpdate.id) {
-        onUpdate(positionToUpdate.id, newPosition);
-        setShowAddForm(false);
-        setEditIndex(null);
-      } else {
-        setError('Cannot update: Position ID is missing');
+    // Convert string IDs to numbers and validate
+    const recruiterId = Number(newPosition.recruiterId);
+    const departmentId = Number(newPosition.departmentId);
+    const budget = Number(newPosition.budget);
+    
+    // Validate number conversion
+    if (isNaN(recruiterId) || recruiterId <= 0) {
+      setError('Recruiter ID must be a valid positive number');
+      return;
+    }
+    
+    if (isNaN(departmentId) || departmentId <= 0) {
+      setError('Department ID must be a valid positive number');
+      return;
+    }
+    
+    if (isNaN(budget) || budget < 0) {
+      setError('Budget must be a valid non-negative number');
+      return;
+    }
+    
+    // Format date to YYYY-MM-DD for the backend
+    const formatDateForBackend = (dateString?: string | null): string | undefined => {
+      if (!dateString) return undefined;
+      try {
+        const date = new Date(dateString);
+        // Check if date is valid
+        if (isNaN(date.getTime())) return undefined;
+        return date.toISOString().split('T')[0];
+      } catch (e) {
+        console.warn('Invalid date format:', dateString);
+        return undefined;
       }
-    } else if (onAdd) {
-      onAdd({
-        ...newPosition,
-        closingDate: newPosition.closingDate?.trim() || undefined,
-      });
-      setShowAddForm(false);
+    };
+
+    // Create position data with proper types and formatted date
+    const positionData = {
+      ...newPosition,
+      recruiterId,
+      departmentId,
+      budget,
+      status: newPosition.status || 'draft', // Ensure status has a default value
+      closingDate: formatDateForBackend(newPosition.closingDate)
+    };
+    
+    console.log('Prepared position data for update:', positionData);
+    
+    setError(null);
+    setIsSubmitting(true);
+    
+    try {
+      if (editIndex !== null) {
+        // Update existing position
+        const positionToUpdate = positions[editIndex];
+        if (positionToUpdate.id) {
+          console.log('Updating position:', { id: positionToUpdate.id, position: positionData });
+          await onUpdate(positionToUpdate.id, {
+            ...positionData,
+            id: positionToUpdate.id, // Ensure ID is included
+            positionId: positionToUpdate.positionId, // Preserve positionId if it exists
+          });
+          setShowAddForm(false);
+          setEditIndex(null);
+          setNewPosition(defaultNewPosition); // Reset form
+        } else {
+          throw new Error('Cannot update: Position ID is missing');
+        }
+      } else if (onAdd) {
+        // Add new position
+        console.log('Adding new position:', positionData);
+        await onAdd({
+          ...positionData,
+          closingDate: newPosition.closingDate?.trim() || undefined,
+        });
+        setShowAddForm(false);
+        setNewPosition(defaultNewPosition); // Reset form
+      }
+    } catch (error) {
+      console.error('Error saving position:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while saving the position';
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -171,34 +277,17 @@ const PositionTable: React.FC<PositionTableProps> = ({
                 <td style={{ border: '1px solid #ccc', textAlign: 'center', whiteSpace: 'nowrap' }}>
                   <button
                     style={{
-                      backgroundColor: 'transparent',
-                      border: '1px solid #ccc',
-                      padding: '4px 8px',
-                      marginRight: 8,
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => handleEditClick(idx)}
-                  >
-                    [Edit]
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUpdate(pos.id!, pos);
-                    }}
-                    disabled={!pos.id}
-                    style={{
                       backgroundColor: '#4CAF50',
                       color: 'white',
                       border: 'none',
                       padding: '5px 10px',
                       margin: '0 5px',
                       borderRadius: '4px',
-                      cursor: pos.id ? 'pointer' : 'not-allowed',
-                      opacity: pos.id ? 1 : 0.5
+                      cursor: 'pointer'
                     }}
+                    onClick={() => handleEditClick(idx)}
                   >
-                    Update
+                    [Edit]
                   </button>
                   <button 
                     className="delete-button"
@@ -325,23 +414,25 @@ const PositionTable: React.FC<PositionTableProps> = ({
                 name="closingDate"
                 type="date"
                 placeholder="Closing date"
-                value={newPosition.closingDate}
+                value={newPosition.closingDate || ''}
                 onChange={handleInputChange}
                 style={{ marginRight: 8 }}
               />
               <button
                 style={{
-                  backgroundColor: 'transparent',
-                  border: '1px solid #4CAF50',
-                  color: '#4CAF50',
-                  padding: '4px 12px',
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  padding: '6px 16px',
                   marginRight: 8,
                   borderRadius: 4,
-                  cursor: 'pointer'
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.7 : 1
                 }}
                 onClick={handleAddConfirm}
+                disabled={isSubmitting}
               >
-                Confirm
+                {isSubmitting ? 'Saving...' : (editIndex !== null ? 'Update' : 'Add')}
               </button>
               <button
                 style={{

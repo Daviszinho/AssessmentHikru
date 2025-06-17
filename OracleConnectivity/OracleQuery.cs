@@ -17,12 +17,18 @@ namespace Hikru.Assessment.OracleConnectivity
     {
         private OracleConnection? _connection;
         private bool _disposed = false;
+        private readonly string _connectionString;
+        private readonly string _configFile;
+        private readonly string _connectionName;
 
         /// <summary>
         /// Initializes a new instance of the OracleQuery class
         /// </summary>
         public OracleQuery()
         {
+            _connectionString = string.Empty;
+            _configFile = string.Empty;
+            _connectionName = string.Empty;
         }
         
         private async Task<OracleConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
@@ -41,6 +47,7 @@ namespace Hikru.Assessment.OracleConnectivity
             GC.SuppressFinalize(this);
         }
         
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
@@ -357,46 +364,147 @@ namespace Hikru.Assessment.OracleConnectivity
                 using (var command = new OracleCommand(storedProcedureName, connection))
                 {
                     command.CommandType = CommandType.StoredProcedure;
+                    command.BindByName = true; // Important: Use named parameters
 
-                    // Add input parameters
+                    // Clear any existing parameters
+                    command.Parameters.Clear();
+                    
+                    // Add input parameters with explicit types
                     if (parameters != null && parameters.Length > 0)
                     {
-                        command.Parameters.AddRange(parameters);
+                        foreach (var param in parameters)
+                        {
+                            command.Parameters.Add(param);
+                        }
                     }
 
-
-                    // Add success flag output parameter
+                    // Add success output parameter (only p_success, no p_message)
                     var successParam = new OracleParameter
                     {
                         ParameterName = "p_success",
                         OracleDbType = OracleDbType.Int32,
-                        Direction = ParameterDirection.Output
+                        Direction = ParameterDirection.Output,
+                        Size = 22  // Explicit size for Oracle NUMBER type
                     };
                     command.Parameters.Add(successParam);
-
-                    // Add message output parameter
-                    var messageParam = new OracleParameter
-                    {
-                        ParameterName = "p_message",
-                        OracleDbType = OracleDbType.Varchar2,
-                        Size = 4000,
-                        Direction = ParameterDirection.Output
-                    };
-                    command.Parameters.Add(messageParam);
-
-                    // Execute the command
-                    int rowsAffected = await command.ExecuteNonQueryAsync();
                     
-                    // Check if the operation was successful based on the output parameter
-                    int success = Convert.ToInt32(successParam.Value);
-                    string message = messageParam.Value?.ToString() ?? string.Empty;
-                    
-                    if (success == 0 && !string.IsNullOrEmpty(message))
+                    // Log the parameter types before execution
+                    Console.WriteLine("[OracleQuery] Parameter types before execution:");
+                    foreach (OracleParameter param in command.Parameters)
                     {
-                        throw new Exception($"Stored procedure execution failed: {message}");
+                        Console.WriteLine($"  {param.ParameterName}: Type={param.OracleDbType}, .NET Type={param.Value?.GetType().FullName ?? "null"}");
                     }
+
+                    // Log the command details
+                    Console.WriteLine($"[OracleQuery] === Executing Command ===");
+                    Console.WriteLine($"[OracleQuery] Type: {command.CommandType}");
+                    Console.WriteLine($"[OracleQuery] Text: {command.CommandText}");
+                    Console.WriteLine($"[OracleQuery] Parameters ({command.Parameters.Count}):");
                     
-                    return rowsAffected;
+                    // Log detailed parameter information
+                    foreach (OracleParameter param in command.Parameters)
+                    {
+                        string direction = param.Direction == ParameterDirection.Input ? "IN" : 
+                                         param.Direction == ParameterDirection.Output ? "OUT" : "INOUT";
+                        string valueStr = param.Value == DBNull.Value ? "NULL" : 
+                                         (param.Value?.ToString() ?? "null");
+                        
+                        Console.WriteLine($"  Parameter: {param.ParameterName}");
+                        Console.WriteLine($"    Type: {param.OracleDbType}");
+                        Console.WriteLine($"    Direction: {direction}");
+                        Console.WriteLine($"    Size: {param.Size}");
+                        Console.WriteLine($"    Precision: {param.Precision}");
+                        Console.WriteLine($"    Scale: {param.Scale}");
+                        Console.WriteLine($"    Value: {valueStr}");
+                        
+                        // Special handling for DateTime parameters
+                        if (param.OracleDbType == OracleDbType.Date || 
+                            param.OracleDbType == OracleDbType.TimeStamp ||
+                            param.OracleDbType == OracleDbType.TimeStampLTZ ||
+                            param.OracleDbType == OracleDbType.TimeStampTZ)
+                        {
+                            if (param.Value != null && param.Value != DBNull.Value)
+                            {
+                                Console.WriteLine($"    .NET Type: {param.Value.GetType().FullName}");
+                            }
+                        }
+                    }
+
+                    try
+                    {
+                        // Execute the command
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        
+                        // Log detailed type information about the success parameter
+                        Console.WriteLine($"[OracleQuery] Success parameter details:");
+                        Console.WriteLine($"  Type: {successParam.Value?.GetType().FullName ?? "null"}");
+                        Console.WriteLine($"  Value: {successParam.Value?.ToString() ?? "null"}");
+                        
+                        // Simple approach - just check if the value can be converted to "1" for success
+                        int success = 0;
+                        try 
+                        {
+                            string stringValue = successParam.Value?.ToString() ?? "0";
+                            success = stringValue.Trim() == "1" ? 1 : 0;
+                            Console.WriteLine($"[OracleQuery] Parsed success value: {success}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[OracleQuery] Error parsing success value: {ex.Message}");
+                        }
+                        
+                        // Log the result
+                        Console.WriteLine($"[OracleQuery] Execution completed. Rows affected: {rowsAffected}, Success flag: {success}");
+                        
+                        // In Oracle, ExecuteNonQuery returns -1 for successful execution of PL/SQL blocks
+                        // So we'll rely on the success flag from the stored procedure
+                        if (success != 1)
+                        {
+                            throw new Exception($"Stored procedure execution failed with success code: {success}");
+                        }
+                        
+                        // Return the number of rows affected (or 1 if it's -1, which is common for PL/SQL blocks)
+                        return rowsAffected >= 0 ? rowsAffected : 1;
+                    }
+                    catch (Exception ex)
+                    {
+                        string errorMessage = $"Error executing stored procedure {storedProcedureName}. ";
+                        
+                        try 
+                        {
+                            // Try to get the success value safely
+                            string successValue = "N/A";
+                            if (successParam?.Value != null)
+                            {
+                                if (successParam.Value is OracleDecimal oracleDecimal)
+                                {
+                                    successValue = oracleDecimal.Value.ToString();
+                                }
+                                else
+                                {
+                                    successValue = successParam.Value.ToString() ?? "N/A";
+                                }
+                            }
+                            
+                            errorMessage += $"Success: {successValue}. ";
+                        }
+                        catch (Exception innerEx)
+                        {
+                            Console.WriteLine($"[OracleQuery] Error getting success value: {innerEx.Message}");
+                            errorMessage += "Success: Error reading value. ";
+                        }
+                        
+                        errorMessage += $"Error: {ex.Message}";
+                        Console.WriteLine($"[OracleQuery] {errorMessage}");
+                        
+                        // Include inner exception details if available
+                        if (ex.InnerException != null)
+                        {
+                            errorMessage += $" Inner Exception: {ex.InnerException.Message}";
+                        }
+                        
+                        throw new Exception(errorMessage, ex);
+                    }
                 }
             }
         }

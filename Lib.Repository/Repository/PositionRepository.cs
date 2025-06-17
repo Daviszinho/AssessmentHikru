@@ -66,11 +66,114 @@ namespace Lib.Repository.Repository
         }
 
         // Update position
-        public Task<bool> UpdatePositionAsync(Position position)
+        public async Task<bool> UpdatePositionAsync(Position position)
         {
-            // TODO: Implement UpdatePositionAsync using the appropriate OracleQuery method
-            // This will need to be implemented once the OracleQuery class has the required method
-            throw new NotImplementedException("UpdatePositionAsync is not yet implemented. Waiting for OracleQuery implementation.");
+            try 
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Updating position ID: {position.Id}");
+                
+                // Ensure required IDs are provided
+                if (!position.RecruiterId.HasValue)
+                {
+                    throw new ArgumentException("Recruiter ID is required");
+                }
+                
+                if (!position.DepartmentId.HasValue)
+                {
+                    throw new ArgumentException("Department ID is required");
+                }
+                
+                int recruiterId = position.RecruiterId.Value;
+                int departmentId = position.DepartmentId.Value;
+                
+                // Log the incoming position data for debugging
+                Console.WriteLine($"[PositionRepository] Updating position with data: " +
+                    $"ID={position.Id}, " +
+                    $"Title={position.Title}, " +
+                    $"Status={position.Status ?? "draft"}, " +
+                    $"RecruiterId={recruiterId}, " +
+                    $"DepartmentId={departmentId}, " +
+                    $"Budget={position.Budget}, " +
+                    $"ClosingDate={(position.ClosingDate?.ToString("yyyy-MM-dd") ?? "null")}");
+
+                // Create parameters with exact names and types as in the stored procedure
+                var parameters = new List<OracleParameter>();
+                
+                // Add parameters with explicit types and directions
+                parameters.Add(CreateParameter("p_id", OracleDbType.Int32, ParameterDirection.Input, position.Id));
+                parameters.Add(CreateParameter("p_title", OracleDbType.Varchar2, ParameterDirection.Input, position.Title ?? string.Empty, 255));
+                parameters.Add(CreateParameter("p_description", OracleDbType.Varchar2, ParameterDirection.Input, position.Description, 4000));
+                parameters.Add(CreateParameter("p_location", OracleDbType.Varchar2, ParameterDirection.Input, position.Location, 255));
+                parameters.Add(CreateParameter("p_status", OracleDbType.Varchar2, ParameterDirection.Input, position.Status ?? "draft", 50));
+                parameters.Add(CreateParameter("p_recruiter_id", OracleDbType.Int32, ParameterDirection.Input, recruiterId));
+                parameters.Add(CreateParameter("p_department_id", OracleDbType.Int32, ParameterDirection.Input, departmentId));
+                parameters.Add(CreateParameter("p_budget", OracleDbType.Decimal, ParameterDirection.Input, position.Budget));
+                
+                // Handle the date parameter carefully
+                var closingDate = position.ClosingDate.HasValue && position.ClosingDate.Value > DateTime.MinValue 
+                    ? (object)position.ClosingDate.Value 
+                    : DBNull.Value;
+                parameters.Add(new OracleParameter("p_closing_date", OracleDbType.Date) { 
+                    Direction = ParameterDirection.Input,
+                    Value = closingDate 
+                });
+                
+                // Note: p_success is added automatically by OracleQuery
+
+                // Log parameter details for debugging with more information
+                Console.WriteLine("[PositionRepository] Parameters being passed to update_position:");
+                for (int i = 0; i < parameters.Count; i++)
+                {
+                    var param = parameters[i];
+                    string valueStr = (param.Value == DBNull.Value) ? "NULL" : 
+                                     (param.Value == null) ? "null" : 
+                                     $"'{param.Value}' (Type: {param.Value.GetType().Name})";
+                    
+                    // Log detailed parameter information
+                    Console.WriteLine($"  [{i}] {param.ParameterName}:");
+                    Console.WriteLine($"    Type: {param.OracleDbType}");
+                    Console.WriteLine($"    Direction: {param.Direction}");
+                    Console.WriteLine($"    Value: {valueStr}");
+                    Console.WriteLine($"    Size: {param.Size}");
+                    Console.WriteLine($"    Precision: {param.Precision}");
+                    Console.WriteLine($"    Scale: {param.Scale}");
+                    
+                    Console.WriteLine($"  [{i}] {param.ParameterName} = {valueStr}");
+                    Console.WriteLine($"     Type: {param.OracleDbType}, Direction: {param.Direction}, Size: {param.Size}");
+                }
+                
+                Console.WriteLine($"[PositionRepository] Update parameters - " +
+                    $"ID: {position.Id}, " +
+                    $"RecruiterId: {recruiterId} (type: {recruiterId.GetType()}), " +
+                    $"DepartmentId: {departmentId} (type: {departmentId.GetType()})");
+
+                try 
+                {
+                    Console.WriteLine($"[PositionRepository] Calling update_position stored procedure");
+                    int rowsAffected = await _oracleQuery.ExecuteNonQueryAsync("update_position", parameters.ToArray());
+                    
+                    // Check if the operation was successful based on the number of rows affected
+                    bool success = rowsAffected > 0; 
+                    
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Update {(success ? "succeeded" : "no rows affected")} for position ID: {position.Id}");
+                    
+                    return success;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[PositionRepository] Error in ExecuteNonQueryAsync: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"[PositionRepository] Inner exception: {ex.InnerException.Message}");
+                    }
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Error updating position: {ex}");
+                throw;
+            }
         }
 
         // Remove position
@@ -197,6 +300,24 @@ namespace Lib.Repository.Repository
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Creates an OracleParameter with the specified properties
+        /// </summary>
+        private OracleParameter CreateParameter(string name, OracleDbType dbType, ParameterDirection direction, object value, int? size = null)
+        {
+            var param = new OracleParameter(name, dbType);
+            
+            if (size.HasValue)
+            {
+                param.Size = size.Value;
+            }
+            
+            param.Direction = direction;
+            param.Value = value ?? DBNull.Value;
+            
+            return param;
         }
 
         protected virtual void Dispose(bool disposing)
