@@ -3,10 +3,10 @@ using System;
 using System.Data;
 using System.Threading.Tasks;
 
-class Program
+class Program222
 {
     // Punto de entrada principal
-    static async Task Main(string[] args)
+    static async Task Main2222(string[] args)
     {
         try
         {
