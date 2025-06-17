@@ -7,6 +7,19 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Add CORS
+var allowedOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: allowedOrigins,
+                      policy =>
+                      {
+                          policy.AllowAnyOrigin()
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -16,6 +29,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable CORS - Must be before UseAuthorization and MapControllers
+app.UseCors(allowedOrigins);
 
 app.UseAuthorization();
 

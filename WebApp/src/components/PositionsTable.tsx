@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export type Status = 'draft' | 'open' | 'closed' | 'archived';
 
 export interface Position {
+  id?: string;
   title: string;
   description: string;
   location: string;
@@ -17,8 +18,8 @@ interface PositionTableProps {
   positions: Position[];
   expandedIndex: number | null;
   onExpand: (idx: number) => void;
-  onDelete: (idx: number) => void;
-  onUpdate: (idx: number) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, position: Position) => void;
   onAdd?: (position: Position) => void;
 }
 
@@ -92,9 +93,14 @@ const PositionTable: React.FC<PositionTableProps> = ({
     setError(null);
     
     if (editIndex !== null) {
-      onUpdate(editIndex);
-      setShowAddForm(false);
-      setEditIndex(null);
+      const positionToUpdate = positions[editIndex];
+      if (positionToUpdate.id) {
+        onUpdate(positionToUpdate.id, newPosition);
+        setShowAddForm(false);
+        setEditIndex(null);
+      } else {
+        setError('Cannot update: Position ID is missing');
+      }
     } else if (onAdd) {
       onAdd({
         ...newPosition,
@@ -109,10 +115,6 @@ const PositionTable: React.FC<PositionTableProps> = ({
     setError(null);
   };
 
-  const handleUpdate = (idx: number) => {
-    onUpdate(idx);
-  };
-
   return (
     <div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -125,7 +127,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
         </thead>
         <tbody>
           {positions.map((pos, idx) => (
-            <React.Fragment key={idx}>
+            <React.Fragment key={pos.id || `position-${idx}`}>
               <tr>
                 <td
                   style={{ border: '1px solid #ccc', cursor: 'pointer', color: '#1976d2' }}
@@ -135,7 +137,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
                   {pos.title}
                 </td>
                 <td style={{ border: '1px solid #ccc' }}>{pos.description}</td>
-                <td style={{ border: '1px solid #ccc', textAlign: 'center' }}>
+                <td style={{ border: '1px solid #ccc', textAlign: 'center', whiteSpace: 'nowrap' }}>
                   <button
                     style={{
                       backgroundColor: 'transparent',
@@ -148,21 +150,48 @@ const PositionTable: React.FC<PositionTableProps> = ({
                   >
                     [Edit]
                   </button>
-                  <button
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: '1px solid #ccc',
-                      padding: '4px 8px',
-                      cursor: 'pointer'
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdate(pos.id!, pos);
                     }}
-                    onClick={() => onDelete(idx)}
+                    disabled={!pos.id}
+                    style={{
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      border: 'none',
+                      padding: '5px 10px',
+                      margin: '0 5px',
+                      borderRadius: '4px',
+                      cursor: pos.id ? 'pointer' : 'not-allowed',
+                      opacity: pos.id ? 1 : 0.5
+                    }}
                   >
-                    [Delete]
+                    Update
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(pos.id!);
+                    }}
+                    disabled={!pos.id}
+                    style={{
+                      backgroundColor: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      padding: '5px 10px',
+                      margin: '0 5px',
+                      borderRadius: '4px',
+                      cursor: pos.id ? 'pointer' : 'not-allowed',
+                      opacity: pos.id ? 1 : 0.5
+                    }}
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>
               {expandedIndex === idx && (
-                <tr>
+                <tr key={`expanded-${pos.id || `position-${idx}`}`}>
                   <td colSpan={3} style={{ border: '1px solid #ccc', background: '#1a1a1a' }}>
                     <div><strong>Location:</strong> {pos.location}</div>
                     <div><strong>Status:</strong> {pos.status}</div>
