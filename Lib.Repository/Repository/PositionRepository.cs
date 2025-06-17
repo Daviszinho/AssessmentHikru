@@ -22,13 +22,39 @@ namespace Lib.Repository.Repository
         // Get all positions
         public async Task<IEnumerable<Position>> GetAllPositionsAsync()
         {
-            return await _oracleQuery.GetAllAsync("position_pkg.get_all_positions", MapPosition);
+            try 
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Fetching all positions from database...");
+                var positions = await _oracleQuery.GetAllAsync<Position>("get_all_positions", MapPosition);
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Retrieved {positions.Count()} positions from database");
+                foreach (var pos in positions)
+                {
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Position ID: {pos.Id}, Title: {pos.Title}");
+                }
+                return positions;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Error fetching positions: {ex}");
+                throw;
+            }
         }
 
         // Get position by ID
         public async Task<Position?> GetPositionByIdAsync(int positionId)
         {
-            return await _oracleQuery.GetByIdAsync("position_pkg.get_position_by_id", positionId, MapPosition);
+            try 
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Fetching position by ID: {positionId}");
+                var position = await _oracleQuery.GetByIdAsync("position_pkg.get_position_by_id", positionId, MapPosition);
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] {(position != null ? "Found" : "Did not find")} position with ID: {positionId}");
+                return position;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Error fetching position by ID {positionId}: {ex}");
+                throw;
+            }
         }
 
         // Add new position
@@ -58,8 +84,8 @@ namespace Lib.Repository.Repository
                 Console.WriteLine($"[PositionRepository] Deleting position with ID: {positionId}");
                 
                 // Use named parameter format for Oracle
-                string sql = "DELETE FROM Position WHERE PositionId = :positionId";
-                var param = new OracleParameter("positionId", positionId);
+                string sql = "DELETE FROM Position WHERE Id = :id";
+                var param = new OracleParameter("id", positionId);
                 
                 Console.WriteLine($"[PositionRepository] Executing: {sql}, ID: {positionId}");
                 
@@ -83,21 +109,87 @@ namespace Lib.Repository.Repository
             }
         }
 
-        // Map OracleDataReader to Position entity
-        private Position MapPosition(OracleDataReader reader)
+        // Helper method to get column ordinal with case-insensitive matching
+        private int GetOrdinalCaseInsensitive(OracleDataReader reader, string columnName, List<string> columnNames = null)
         {
-            return new Position
+            try
             {
-                PositionId = reader.GetInt32(reader.GetOrdinal("POSITIONID")),
-                Title = reader.GetString(reader.GetOrdinal("TITLE")),
-                Description = reader.IsDBNull(reader.GetOrdinal("DESCRIPTION")) ? null : reader.GetString(reader.GetOrdinal("DESCRIPTION")),
-                Location = reader.IsDBNull(reader.GetOrdinal("LOCATION")) ? null : reader.GetString(reader.GetOrdinal("LOCATION")),
-                Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS")),
-                RecruiterId = reader.IsDBNull(reader.GetOrdinal("RECRUITERID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("RECRUITERID")),
-                DepartmentId = reader.IsDBNull(reader.GetOrdinal("DEPARTMENTID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("DEPARTMENTID")),
-                Budget = reader.IsDBNull(reader.GetOrdinal("BUDGET")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("BUDGET")),
-                ClosingDate = reader.IsDBNull(reader.GetOrdinal("CLOSINGDATE")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("CLOSINGDATE"))
-            };
+                if (columnNames == null)
+                {
+                    return reader.GetOrdinal(columnName);
+                }
+
+                // Try exact match first (most efficient)
+                var exactMatch = columnNames.FirstOrDefault(c => c.Equals(columnName, StringComparison.OrdinalIgnoreCase));
+                if (exactMatch != null)
+                {
+                    return reader.GetOrdinal(exactMatch);
+                }
+
+                // Fall back to standard behavior if not found
+                return reader.GetOrdinal(columnName);
+            }
+            catch (IndexOutOfRangeException ex)
+            {
+                string availableColumns = columnNames != null ? string.Join(", ", columnNames) : "[not available]";
+                throw new Exception($"Column '{columnName}' not found. Available columns: {availableColumns}", ex);
+            }
+        }
+
+        // Map IDataReader to Position entity
+        private Position MapPosition(IDataReader reader)
+        {
+            try 
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Starting to map database row to Position object");
+                
+                // Log all available columns and their values
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Available columns and values:");
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    string columnName = reader.GetName(i);
+                    object value = reader.IsDBNull(i) ? "[NULL]" : reader.GetValue(i);
+                    Console.WriteLine($"  {columnName} ({i}): {value}");
+                }
+
+                // Get column ordinals with case-insensitive matching
+                int idOrdinal = reader.GetOrdinal("ID");
+                int titleOrdinal = reader.GetOrdinal("TITLE");
+                int descriptionOrdinal = reader.GetOrdinal("DESCRIPTION");
+                int locationOrdinal = reader.GetOrdinal("LOCATION");
+                int statusOrdinal = reader.GetOrdinal("STATUS");
+                int recruiterIdOrdinal = reader.GetOrdinal("RECRUITERID");
+                int recruiterNameOrdinal = reader.GetOrdinal("RECRUITERNAME");
+                int departmentIdOrdinal = reader.GetOrdinal("DEPARTMENTID");
+                int departmentNameOrdinal = reader.GetOrdinal("DEPARTMENTNAME");
+                int budgetOrdinal = reader.GetOrdinal("BUDGET");
+                int closingDateOrdinal = reader.GetOrdinal("CLOSINGDATE");
+
+                // Create position object
+                var position = new Position
+                {
+                    Id = reader.GetInt32(idOrdinal),
+                    Title = reader.GetString(titleOrdinal),
+                    Description = reader.IsDBNull(descriptionOrdinal) ? null : reader.GetString(descriptionOrdinal),
+                    Location = reader.IsDBNull(locationOrdinal) ? null : reader.GetString(locationOrdinal),
+                    Status = reader.IsDBNull(statusOrdinal) ? null : reader.GetString(statusOrdinal),
+                    RecruiterId = reader.GetInt32(recruiterIdOrdinal),
+                    DepartmentId = reader.GetInt32(departmentIdOrdinal),
+                    Budget = reader.IsDBNull(budgetOrdinal) ? (decimal?)null : reader.GetDecimal(budgetOrdinal),
+                    ClosingDate = reader.IsDBNull(closingDateOrdinal) ? (DateTime?)null : reader.GetDateTime(closingDateOrdinal),
+                    RecruiterName = reader.GetString(recruiterNameOrdinal),
+                    DepartmentName = reader.GetString(departmentNameOrdinal)
+                };
+
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Successfully mapped position with ID: {position.Id}, Title: {position.Title}");
+                return position;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Error in MapPosition: {ex}");
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Stack Trace: {ex.StackTrace}");
+                throw new Exception("Failed to map database record to Position object. See inner exception for details.", ex);
+            }
         }
 
         // IDisposable implementation

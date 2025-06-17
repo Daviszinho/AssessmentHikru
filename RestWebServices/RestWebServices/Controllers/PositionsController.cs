@@ -51,7 +51,7 @@ namespace RestWebServices.Controllers
                 var success = await _positionRepository.AddPositionAsync(position);
                 if (success)
                 {
-                    return CreatedAtAction(nameof(GetPosition), new { id = position.PositionId }, position);
+                    return CreatedAtAction(nameof(GetPosition), new { id = position.Id }, position);
                 }
                 return BadRequest("Failed to create position");
             }
@@ -65,7 +65,7 @@ namespace RestWebServices.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPosition(int id, Position position)
         {
-            if (id != position.PositionId)
+            if (id != position.Id)
             {
                 return BadRequest("Position ID mismatch");
             }

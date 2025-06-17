@@ -1,11 +1,3 @@
-/*
-CREATE TABLE Recruiter (
-    RecruiterId NUMBER PRIMARY KEY,
-    Name VARCHAR2(255) NOT NULL,
-    Email VARCHAR2(255) UNIQUE NOT NULL
-);
-*/
-
 namespace Lib.Repository.Entities;
 
 public class Recruiter

@@ -14,30 +14,39 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPositions = async () => {
+    console.log('[App] Starting to fetch positions...');
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Attempting to fetch positions from:', API_URL);
+      console.log('[App] Sending GET request to:', API_URL);
+      const startTime = performance.now();
       const response = await fetch(API_URL, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         },
         mode: 'cors',
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        cache: 'no-store'
       });
       
-      console.log('Response status:', response.status, response.statusText);
+      const endTime = performance.now();
+      console.log(`[App] Received response in ${(endTime - startTime).toFixed(2)}ms`);
+      console.log('[App] Response status:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error('[App] Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
-      console.log('Received data:', data);
+      console.log('[App] Received data:', JSON.parse(JSON.stringify(data)));
+      console.log(`[App] Setting ${data.length} positions to state`);
       setPositions(data);
       return data;
     } catch (err) {
