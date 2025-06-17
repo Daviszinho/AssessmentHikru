@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Lib.Repository.Entities;
 using Lib.Repository.Repository;
+using Microsoft.Extensions.Logging;
 
 namespace RestWebServices.Controllers
 {
@@ -8,11 +9,15 @@ namespace RestWebServices.Controllers
     [ApiController]
     public class PositionsController : ControllerBase
     {
+        private readonly ILogger<PositionsController> _logger;
         private readonly PositionRepository _positionRepository;
+        private string _timestamp => $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]";
 
-        public PositionsController(PositionRepository positionRepository)
+        public PositionsController(ILogger<PositionsController> logger, PositionRepository positionRepository)
         {
+            _logger = logger;
             _positionRepository = positionRepository;
+            Console.WriteLine($"{_timestamp} [INFO] PositionsController initialized");
         }
 
         // GET: api/positions
@@ -86,16 +91,29 @@ namespace RestWebServices.Controllers
         {
             try
             {
+                Console.WriteLine($"{_timestamp} [INFO] Attempting to delete position with ID: {id}");
                 var success = await _positionRepository.RemovePositionAsync(id);
                 if (success)
                 {
+                    Console.WriteLine($"{_timestamp} [SUCCESS] Successfully deleted position with ID: {id}");
                     return NoContent();
                 }
+                Console.WriteLine($"{_timestamp} [WARN] Position with ID {id} not found");
                 return NotFound();
             }
-            catch (NotImplementedException)
+            catch (NotImplementedException ex)
             {
-                return StatusCode(501, "Position deletion is not yet implemented");
+                var errorMsg = "Position deletion is not yet implemented";
+                Console.WriteLine($"{_timestamp} [ERROR] {errorMsg}");
+                Console.WriteLine($"{_timestamp} [EXCEPTION] {ex}");
+                return StatusCode(501, errorMsg);
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"An error occurred while deleting position with ID {id}";
+                Console.WriteLine($"{_timestamp} [ERROR] {errorMsg}");
+                Console.WriteLine($"{_timestamp} [EXCEPTION] {ex}");
+                return StatusCode(500, errorMsg);
             }
         }
     }

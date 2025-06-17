@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 export type Status = 'draft' | 'open' | 'closed' | 'archived';
 
 export interface Position {
-  id?: string;
+  id?: string; // Keep for backward compatibility
+  positionId?: number | string; // Add positionId to match backend
   title: string;
   description: string;
   location: string;
@@ -46,6 +47,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
   const [newPosition, setNewPosition] = useState<Position>(defaultNewPosition);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -67,6 +69,24 @@ const PositionTable: React.FC<PositionTableProps> = ({
     setEditIndex(idx);
     setNewPosition(positions[idx]);
     setError(null);
+  };
+
+  const handleDeleteClick = async (id: string, title: string): Promise<void> => {
+    console.log('Delete button clicked', { id, title });
+    const confirmed = window.confirm(`Are you sure you want to delete the position "${title}"?`);
+    console.log('User confirmed delete:', confirmed);
+    
+    if (confirmed) {
+      try {
+        console.log('Calling onDelete with ID:', id);
+        await onDelete(id);
+        console.log('onDelete completed successfully');
+      } catch (error) {
+        console.error('Error in handleDeleteClick:', error);
+        // Re-throw to ensure parent component handles the error
+        throw error;
+      }
+    }
   };
 
   const handleAddConfirm = () => {
@@ -115,6 +135,9 @@ const PositionTable: React.FC<PositionTableProps> = ({
     setError(null);
   };
 
+  // Debug log the positions data
+  console.log('Positions data:', positions);
+
   return (
     <div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -128,10 +151,18 @@ const PositionTable: React.FC<PositionTableProps> = ({
         <tbody>
           {positions.map((pos, idx) => (
             <React.Fragment key={pos.id || `position-${idx}`}>
-              <tr>
+              <tr 
+                onClick={(e) => {
+                  // Only trigger expand if the click was not on a button or other interactive element
+                  const target = e.target as HTMLElement;
+                  if (target.tagName !== 'BUTTON' && !target.closest('button')) {
+                    onExpand(idx);
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              >
                 <td
-                  style={{ border: '1px solid #ccc', cursor: 'pointer', color: '#1976d2' }}
-                  onClick={() => onExpand(idx)}
+                  style={{ border: '1px solid #ccc', color: '#1976d2' }}
                   title="Click to show details"
                 >
                   {pos.title}
@@ -170,20 +201,42 @@ const PositionTable: React.FC<PositionTableProps> = ({
                     Update
                   </button>
                   <button 
+                    className="delete-button"
                     onClick={(e) => {
+                      console.log('Delete button clicked - start');
+                      e.preventDefault();
                       e.stopPropagation();
-                      onDelete(pos.id!);
+                      
+                      console.log('Position data:', pos);
+                      
+                      // Check for both positionId and id for backward compatibility
+                      const positionId = pos.positionId || pos.id;
+                      if (!positionId || isDeleting) {
+                        console.error('Cannot delete: Missing position ID or already deleting', { position: pos });
+                        return;
+                      }
+                      
+                      // Use void to explicitly ignore the promise returned by the async function
+                      void (async () => {
+                        try {
+                          setIsDeleting(true);
+                          const idToDelete = positionId.toString();
+                          if (!idToDelete) {
+                            throw new Error('Position ID is missing or invalid');
+                          }
+                          console.log('Calling handleDeleteClick with ID:', idToDelete);
+                          await handleDeleteClick(idToDelete, pos.title);
+                          console.log('Delete completed');
+                        } catch (err) {
+                          console.error('Delete failed:', err);
+                        } finally {
+                          setIsDeleting(false);
+                        }
+                      })();
                     }}
-                    disabled={!pos.id}
+                    disabled={!pos.positionId && !pos.id || isDeleting}
                     style={{
-                      backgroundColor: '#f44336',
-                      color: 'white',
-                      border: 'none',
-                      padding: '5px 10px',
-                      margin: '0 5px',
-                      borderRadius: '4px',
-                      cursor: pos.id ? 'pointer' : 'not-allowed',
-                      opacity: pos.id ? 1 : 0.5
+                      // Inline styles are now handled by the CSS class
                     }}
                   >
                     Delete

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Oracle.ManagedDataAccess.Client;
+using Oracle.ManagedDataAccess.Types;
 using Lib.Repository.Entities;
 using Hikru.Assessment.OracleConnectivity;
 
@@ -31,7 +32,7 @@ namespace Lib.Repository.Repository
         }
 
         // Add new position
-        public async Task<bool> AddPositionAsync(Position position)
+        public Task<bool> AddPositionAsync(Position position)
         {
             // TODO: Implement AddPositionAsync using the appropriate OracleQuery method
             // This will need to be implemented once the OracleQuery class has the required method
@@ -39,7 +40,7 @@ namespace Lib.Repository.Repository
         }
 
         // Update position
-        public async Task<bool> UpdatePositionAsync(Position position)
+        public Task<bool> UpdatePositionAsync(Position position)
         {
             // TODO: Implement UpdatePositionAsync using the appropriate OracleQuery method
             // This will need to be implemented once the OracleQuery class has the required method
@@ -49,9 +50,37 @@ namespace Lib.Repository.Repository
         // Remove position
         public async Task<bool> RemovePositionAsync(int positionId)
         {
-            // TODO: Implement RemovePositionAsync using the appropriate OracleQuery method
-            // This will need to be implemented once the OracleQuery class has the required method
-            throw new NotImplementedException("RemovePositionAsync is not yet implemented. Waiting for OracleQuery implementation.");
+            if (positionId <= 0)
+                throw new ArgumentException("Position ID must be greater than zero", nameof(positionId));
+
+            try
+            {
+                Console.WriteLine($"[PositionRepository] Deleting position with ID: {positionId}");
+                
+                // Use named parameter format for Oracle
+                string sql = "DELETE FROM Position WHERE PositionId = :positionId";
+                var param = new OracleParameter("positionId", positionId);
+                
+                Console.WriteLine($"[PositionRepository] Executing: {sql}, ID: {positionId}");
+                
+                // Use the new ExecuteSqlAsync method for direct SQL execution
+                int rowsAffected = await _oracleQuery.ExecuteSqlAsync(sql, param);
+                bool success = rowsAffected > 0;
+                
+                Console.WriteLine($"[PositionRepository] Delete {(success ? "succeeded" : "did not affect any rows")} for ID: {positionId}");
+                return success;
+            }
+            catch (Exception ex)
+            {
+                string errorMsg = $"Error deleting position with ID {positionId}: {ex.Message}";
+                Console.WriteLine($"[PositionRepository] {errorMsg}");
+                Console.WriteLine($"[PositionRepository] Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"[PositionRepository] Inner Exception: {ex.InnerException.Message}");
+                }
+                throw new Exception(errorMsg, ex);
+            }
         }
 
         // Map OracleDataReader to Position entity

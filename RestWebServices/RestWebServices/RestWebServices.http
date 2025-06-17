@@ -1,6 +1,12 @@
 @RestWebServices_HostAddress = http://localhost:5246
 
-GET {{RestWebServices_HostAddress}}/weatherforecast/
+### Get all positions
+GET {{RestWebServices_HostAddress}}/api/positions
 Accept: application/json
+
+### Delete a position (replace {id} with actual position ID)
+DELETE {{RestWebServices_HostAddress}}/api/positions/1
+Accept: application/json
+Content-Type: application/json
 
 ###

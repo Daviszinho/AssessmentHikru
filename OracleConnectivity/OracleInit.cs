@@ -38,14 +38,14 @@ namespace Hikru.Assessment.OracleConnectivity
                 Console.WriteLine("Por favor, asegúrate de haber descargado el wallet de Oracle Cloud y colocado los archivos en esta ubicación.");
             }
 
-            Console.WriteLine("Configuración de conexión:");
-            Console.WriteLine(connectionString.Replace("DavisOracle25!", "********"));
+            //Console.WriteLine("Configuración de conexión:");
+            //Console.WriteLine(connectionString.Replace("DavisOracle25!", "********"));
 
-            Console.WriteLine("Iniciando conexión a Oracle...");
+            //Console.WriteLine("Iniciando conexión a Oracle...");
             
             // Crear la conexión
             var connection = new OracleConnection(connectionString);
-            Console.WriteLine("Intentando abrir la conexión...");
+            //Console.WriteLine("Intentando abrir la conexión...");
             
             try
             {

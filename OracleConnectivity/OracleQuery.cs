@@ -150,5 +150,99 @@ namespace Hikru.Assessment.OracleConnectivity
 
             return results;
         }
+
+        /// <summary>
+        /// Executes a stored procedure that doesn't return any result set (INSERT, UPDATE, DELETE)
+        /// </summary>
+        /// <param name="storedProcedureName">Name of the stored procedure</param>
+        /// <param name="parameters">Optional parameters for the stored procedure</param>
+        /// <returns>Number of rows affected</returns>
+        public async Task<int> ExecuteNonQueryAsync(
+            string storedProcedureName,
+            params OracleParameter[] parameters)
+        {
+            if (string.IsNullOrWhiteSpace(storedProcedureName))
+                throw new ArgumentException("Stored procedure name cannot be empty", nameof(storedProcedureName));
+
+            using (var connection = await GetConnectionAsync())
+            {
+                using (var command = new OracleCommand(storedProcedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    // Add input parameters
+                    if (parameters != null && parameters.Length > 0)
+                    {
+                        command.Parameters.AddRange(parameters);
+                    }
+
+
+                    // Add success flag output parameter
+                    var successParam = new OracleParameter
+                    {
+                        ParameterName = "p_success",
+                        OracleDbType = OracleDbType.Int32,
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(successParam);
+
+                    // Add message output parameter
+                    var messageParam = new OracleParameter
+                    {
+                        ParameterName = "p_message",
+                        OracleDbType = OracleDbType.Varchar2,
+                        Size = 4000,
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(messageParam);
+
+                    // Execute the command
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
+                    
+                    // Check if the operation was successful based on the output parameter
+                    int success = Convert.ToInt32(successParam.Value);
+                    string message = messageParam.Value?.ToString() ?? string.Empty;
+                    
+                    if (success == 0 && !string.IsNullOrEmpty(message))
+                    {
+                        throw new Exception($"Stored procedure execution failed: {message}");
+                    }
+                    
+                    return rowsAffected;
+                }
+            }
+        }
+
+        
+        /// <summary>
+        /// Executes a direct SQL statement that doesn't return any result set (INSERT, UPDATE, DELETE)
+        /// </summary>
+        /// <param name="sql">The SQL statement to execute</param>
+        /// <param name="parameters">Optional parameters for the SQL statement</param>
+        /// <returns>Number of rows affected</returns>
+        public async Task<int> ExecuteSqlAsync(
+            string sql,
+            params OracleParameter[] parameters)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+                throw new ArgumentException("SQL statement cannot be empty", nameof(sql));
+
+            using (var connection = await GetConnectionAsync())
+            {
+                using (var command = new OracleCommand(sql, connection))
+                {
+                    command.CommandType = CommandType.Text;
+
+                    // Add input parameters
+                    if (parameters != null && parameters.Length > 0)
+                    {
+                        command.Parameters.AddRange(parameters);
+                    }
+
+                    // Execute the command
+                    return await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
     }
 }

@@ -13,40 +13,44 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPositions = async () => {
-      try {
-        console.log('Attempting to fetch positions from:', API_URL);
-        const response = await fetch(API_URL, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          mode: 'cors',
-          credentials: 'same-origin'
-        });
-        
-        console.log('Response status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Error response:', errorText);
-          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Received data:', data);
-        setPositions(data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        console.error('Error fetching positions:', errorMessage, err);
-        setError(`Failed to load positions: ${errorMessage}`);
-      } finally {
-        setIsLoading(false);
+  const fetchPositions = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log('Attempting to fetch positions from:', API_URL);
+      const response = await fetch(API_URL, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'same-origin'
+      });
+      
+      console.log('Response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
-    };
+      
+      const data = await response.json();
+      console.log('Received data:', data);
+      setPositions(data);
+      return data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error('Error fetching positions:', errorMessage, err);
+      setError(`Failed to load positions: ${errorMessage}`);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPositions();
   }, []);
 
@@ -74,19 +78,53 @@ function App() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-      });
+      console.log('Deleting position with raw ID:', id);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Check if ID is provided and valid
+      if (!id || id.trim() === '') {
+        throw new Error('Position ID is required');
       }
       
-      setPositions(prev => prev.filter(position => position.id !== id));
-      if (expandedIndex !== null) setExpandedIndex(null);
+      // Ensure the ID is a number since the backend expects an int
+      const positionId = parseInt(id, 10);
+      if (isNaN(positionId) || positionId <= 0) {
+        throw new Error(`Invalid position ID: ${id}. Must be a positive number`);
+      }
+
+      console.log(`Deleting position with ID: ${positionId}`);
+      const response = await fetch(`${API_URL}/${positionId}`, {
+        method: 'DELETE',
+        mode: 'cors', // Explicitly set CORS mode
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin // Send the origin header
+        },
+        credentials: 'same-origin' // Only send credentials for same-origin requests
+      });
+      
+      console.log('Delete response status:', response.status);
+      
+      if (response.status === 200 || response.status === 204) { // 200 OK or 204 No Content for successful delete
+        // Refresh the positions list from the server to ensure consistency
+        await fetchPositions();
+        // Reset expanded index if the deleted position was expanded
+        if (expandedIndex !== null) setExpandedIndex(null);
+        return true;
+      } else if (response.status === 404) {
+        throw new Error('Position not found');
+      } else if (response.status === 501) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Delete operation not implemented on server');
+      } else {
+        const errorData = await response.text();
+        throw new Error(errorData || `HTTP error! status: ${response.status}`);
+      }
     } catch (err) {
-      console.error('Error deleting position:', err);
-      setError('Failed to delete position. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete position';
+      console.error('Error deleting position:', errorMessage, err);
+      setError(`Failed to delete position: ${errorMessage}`);
+      return false;
     }
   };
 
