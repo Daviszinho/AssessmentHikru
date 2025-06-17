@@ -1,8 +1,83 @@
+/* Base styles */
+:root {
+  --primary-color: #646cff;
+  --primary-hover: #535bf2;
+  --error-color: #ff4444;
+  --success-color: #4caf50;
+  --text-color: #213547;
+  --background-color: #ffffff;
+  --focus-outline: 3px solid #4d90fe;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: more) {
+  :root {
+    --primary-color: #0033cc;
+    --primary-hover: #002699;
+    --focus-outline: 3px solid #000000;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary-color);
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-to-content:focus {
+  top: 0;
+  outline: 3px solid var(--focus-outline);
+}
+
+/* Main layout */
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  line-height: 1.5;
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+/* Focus styles */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex="0"]:focus {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+/* Hide content visually but keep it accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .logo {
@@ -10,6 +85,7 @@
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms;
+  border-radius: 8px;
 }
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
@@ -33,8 +109,71 @@
   }
 }
 
-.card {
-  padding: 2em;
+/* Error and status messages */
+.error-message {
+  background-color: #ffebee;
+  color: var(--error-color);
+  padding: 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--error-color);
+  text-align: left;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s ease-in-out infinite;
+  margin: 1rem 0;
+}
+
+/* Header and navigation */
+.app-header {
+  margin-bottom: 2rem;
+}
+
+.logo-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.logo-list li {
+  margin: 0;
+}
+
+/* Focus management for modals/dialogs */
+[role="dialog"] {
+  outline: none;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+  
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    font-weight: normal;
+  }
 }
 
 .read-the-docs {

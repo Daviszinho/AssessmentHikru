@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PositionTable from './components/PositionsTable.tsx';
 import type { Position } from './components/PositionsTable.tsx';
 import reactLogo from './assets/react.svg';
@@ -7,11 +7,32 @@ import './App.css';
 
 const API_URL = 'http://localhost:5246/api/positions';
 
-function App() {
+const App: React.FC = () => {
+  // Refs for focus management
+  const mainContentRef = useRef<HTMLElement>(null);
+  const skipToContentRef = useRef<HTMLAnchorElement>(null);
+  const lastFocusedElement = useRef<HTMLElement | null>(null);
+  
+  // State management
   const [positions, setPositions] = useState<Position[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Set focus to main content area after navigation
+  const focusMainContent = useCallback(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.focus();
+    }
+  }, []);
+
+  // Handle skip to content
+  const handleSkipToContent = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && mainContentRef.current) {
+      e.preventDefault();
+      mainContentRef.current.focus();
+    }
+  };
 
   const fetchPositions = async () => {
     console.log('[App] Starting to fetch positions...');
@@ -205,35 +226,125 @@ function App() {
     setExpandedIndex(expandedIndex === idx ? null : idx);
   };
 
+  // Set up focus management for modals/dialogs
+  useEffect(() => {
+    // Save the currently focused element when the component mounts
+    lastFocusedElement.current = document.activeElement as HTMLElement;
+    
+    // Set focus to the main content area when the component mounts
+    if (mainContentRef.current) {
+      mainContentRef.current.focus();
+    }
+
+    // Cleanup function to restore focus when component unmounts
+    return () => {
+      if (lastFocusedElement.current) {
+        lastFocusedElement.current.focus();
+      }
+    };
+  }, []);
+
   return (
-    <div>
-      <div>
+    <div className="app-container" role="application">
+      {/* Skip to main content link - hidden until focused */}
+      <a
+        href="#main-content"
+        ref={skipToContentRef}
+        className="skip-to-content"
+        onKeyDown={handleSkipToContent}
+      >
+        Skip to main content
+      </a>
+
+      <header className="app-header" role="banner">
         <h1>Welcome to Hikrutech - Full Stack Lead</h1>
         <h2>Full Stack Lead - Davis Penaranda</h2>
-        <a href="https://www.hikrutech.com/" target="_blank">
-          <img src="https://cdn.prod.website-files.com/66c2cf5006b8d37eca26c0d2/66d030e05d6df2a0e0b5aabe_logo-footer.png" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      {isLoading ? (
-        <div>Loading positions...</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : (
-        <PositionTable
-          positions={positions}
-          expandedIndex={expandedIndex}
-          onExpand={handleExpand}
-          onDelete={handleDelete}
-          onUpdate={handleUpdate}
-          onAdd={handleAdd}
-        />
-      )}
+        <nav aria-label="External links">
+          <ul className="logo-list">
+            <li>
+              <a 
+                href="https://www.hikrutech.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="Visit Hikrutech website"
+              >
+                <img 
+                  src="https://cdn.prod.website-files.com/66c2cf5006b8d37eca26c0d2/66d030e05d6df2a0e0b5aabe_logo-footer.png" 
+                  className="logo" 
+                  alt="Hikrutech logo" 
+                />
+              </a>
+            </li>
+            <li>
+              <a 
+                href="https://vite.dev" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="Learn about Vite"
+              >
+                <img 
+                  src={viteLogo} 
+                  className="logo" 
+                  alt="Vite logo" 
+                />
+              </a>
+            </li>
+            <li>
+              <a 
+                href="https://react.dev" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="Learn about React"
+              >
+                <img 
+                  src={reactLogo} 
+                  className="logo react" 
+                  alt="React logo" 
+                />
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </header>
+
+      <main 
+        id="main-content"
+        ref={mainContentRef}
+        role="main"
+        tabIndex={-1}
+        aria-labelledby="page-title"
+        className={isLoading ? 'loading' : ''}
+      >
+        {error && (
+          <div 
+            role="alert" 
+            aria-live="assertive"
+            className="error-message"
+          >
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div 
+            role="status" 
+            aria-live="polite"
+            aria-busy={isLoading}
+          >
+            <p>Loading positions...</p>
+            <div className="loading-spinner" aria-hidden="true"></div>
+          </div>
+        ) : (
+          <PositionTable 
+            positions={positions}
+            expandedIndex={expandedIndex}
+            onExpand={handleExpand}
+            onDelete={handleDelete}
+            onUpdate={handleUpdate}
+            onAdd={handleAdd}
+          />
+        )}
+      </main>
     </div>
   );
 }

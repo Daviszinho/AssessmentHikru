@@ -313,65 +313,71 @@ namespace Lib.Repository.Repository
             return true;
         }
 
-        public async Task<int?> AddPositionAsync(Position position)
+        public async Task<(int? Id, int StatusCode, string ErrorMessage)> AddPositionAsync(Position position)
         {
             try 
             {
                 Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Adding new position: {position.Title}");
                 
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(position.Title) || 
-                    !position.RecruiterId.HasValue || 
-                    !position.DepartmentId.HasValue)
+                // Basic validation
+                if (position == null || string.IsNullOrWhiteSpace(position.Title) || 
+                    !position.RecruiterId.HasValue || !position.DepartmentId.HasValue)
                 {
-                    Console.WriteLine("[PositionRepository] Validation failed: Missing required fields");
-                    return null;
+                    var errorMsg = "Missing required fields: Title, Recruiter ID, and Department ID are required";
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] {errorMsg}");
+                    return (null, 400, errorMsg);
                 }
 
-                // Validate that recruiter and department exist
-                bool isValid = await ValidateRecruiterAndDepartment(position.RecruiterId, position.DepartmentId);
-                if (!isValid)
+                // Validate budget
+                if (position.Budget < 0)
                 {
-                    Console.WriteLine("[PositionRepository] Validation failed: Recruiter or Department does not exist");
-                    return null;
+                    var errorMsg = "Invalid budget: Budget cannot be negative";
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] {errorMsg}");
+                    return (null, 400, errorMsg);
                 }
 
-                // Create parameters for the stored procedure - matching the exact parameter names and order
+                // Set default values if not provided
+                position.Status = string.IsNullOrWhiteSpace(position.Status) ? "draft" : position.Status;
+                
+                // Prepare parameters for the stored procedure including error handling
                 var parameters = new List<OracleParameter>
                 {
-                    // Input parameters
                     CreateParameter("p_title", OracleDbType.Varchar2, ParameterDirection.Input, position.Title, 100),
                     CreateParameter("p_description", OracleDbType.Varchar2, ParameterDirection.Input, position.Description ?? string.Empty, 4000),
                     CreateParameter("p_location", OracleDbType.Varchar2, ParameterDirection.Input, position.Location ?? string.Empty, 100),
-                    CreateParameter("p_status", OracleDbType.Varchar2, ParameterDirection.Input, position.Status ?? "draft", 20),
+                    CreateParameter("p_status", OracleDbType.Varchar2, ParameterDirection.Input, position.Status, 20),
                     CreateParameter("p_recruiter_id", OracleDbType.Int32, ParameterDirection.Input, position.RecruiterId),
                     CreateParameter("p_department_id", OracleDbType.Int32, ParameterDirection.Input, position.DepartmentId),
                     CreateParameter("p_budget", OracleDbType.Decimal, ParameterDirection.Input, position.Budget),
                     CreateParameter("p_closing_date", OracleDbType.Date, ParameterDirection.Input, 
                         position.ClosingDate > DateTime.MinValue ? position.ClosingDate : (object)DBNull.Value),
-                    
-                    // Output parameters
                     CreateParameter("p_new_id", OracleDbType.Int32, ParameterDirection.Output, 0),
-                    CreateParameter("p_success", OracleDbType.Int32, ParameterDirection.Output, 0)
+                    CreateParameter("p_success", OracleDbType.Int32, ParameterDirection.Output, 0),
+                    CreateParameter("p_error_code", OracleDbType.Int32, ParameterDirection.Output, 0),
+                    CreateParameter("p_error_message", OracleDbType.Varchar2, ParameterDirection.Output, 4000)
                 };
 
-                // Log parameters
-                Console.WriteLine("[PositionRepository] Parameters for add_position:");
-                foreach (var param in parameters)
+                // Log parameter details for debugging
+                Console.WriteLine($"[PositionRepository] Parameters for add_position:");
+                foreach (var param in parameters.Where(p => p.Direction != ParameterDirection.Output))
                 {
                     Console.WriteLine($"  {param.ParameterName}: {param.Value} (Type: {param.OracleDbType}, Direction: {param.Direction})");
                 }
 
-                // Execute the stored procedure - using exact case matching
+                // Execute the stored procedure
                 int rowsAffected = await _oracleQuery.ExecuteNonQueryAsync("add_position", parameters.ToArray());
                 
                 // Get the output parameters
                 var successParam = parameters.First(p => p.ParameterName == "p_success");
                 var newIdParam = parameters.First(p => p.ParameterName == "p_new_id");
+                var errorCodeParam = parameters.First(p => p.ParameterName == "p_error_code");
+                var errorMessageParam = parameters.First(p => p.ParameterName == "p_error_message");
                 
                 // Handle OracleDecimal conversion safely
                 bool success = false;
                 int? newId = null;
+                int errorCode = 0;
+                string errorMessage = string.Empty;
                 
                 if (successParam.Value != null && successParam.Value != DBNull.Value)
                 {
@@ -388,32 +394,45 @@ namespace Lib.Repository.Repository
                     else
                         newId = Convert.ToInt32(newIdParam.Value);
                 }
+
+                if (errorCodeParam.Value != null && errorCodeParam.Value != DBNull.Value)
+                {
+                    if (errorCodeParam.Value is Oracle.ManagedDataAccess.Types.OracleDecimal oracleErrorCode)
+                        errorCode = (int)oracleErrorCode.Value;
+                    else
+                        errorCode = Convert.ToInt32(errorCodeParam.Value);
+                }
+
+                errorMessage = errorMessageParam.Value?.ToString() ?? string.Empty;
+                
+                // If there was an error, return the appropriate status code and message
+                if (errorCode > 0)
+                {
+                    Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Error adding position: {errorCode} - {errorMessage}");
+                    return (null, errorCode, errorMessage);
+                }
                 
                 if (success && newId.HasValue)
                 {
                     Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Successfully added position with ID: {newId}");
-                    return newId;
+                    return (newId, 200, string.Empty);
                 }
                 else
                 {
                     // Log detailed error information
                     string errorDetails = "Failed to add position. ";
-                    if (successParam.Value != DBNull.Value)
-                    {
-                        errorDetails += $"Success flag: {successParam.Value}. ";
-                    }
-                    if (newIdParam.Value != DBNull.Value)
-                    {
-                        errorDetails += $"New ID: {newIdParam.Value}. ";
-                    }
+                    errorDetails += $"Success: {success}, New ID: {newId?.ToString() ?? "null"}";
+                    errorDetails += $"\nError Code: {errorCode}, Error Message: {errorMessage}";
+                    
                     Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] {errorDetails}");
-                    return null;
+                    return (null, 500, "An unexpected error occurred while adding the position");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [PositionRepository] Error adding position: {ex.Message}");
                 Console.WriteLine(ex.StackTrace);
+                return (null, 500, "An unexpected error occurred while adding the position");
                 throw;
             }
         }

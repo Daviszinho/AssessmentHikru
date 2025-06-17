@@ -8,17 +8,74 @@ CREATE OR REPLACE PROCEDURE add_position (
     p_budget IN NUMBER,
     p_closing_date IN DATE,
     p_new_id OUT NUMBER,
-    p_success OUT NUMBER
+    p_success OUT NUMBER,
+    p_error_code OUT NUMBER,
+    p_error_message OUT VARCHAR2
 )
 IS
     v_new_id NUMBER;
+    v_recruiter_exists NUMBER := 0;
+    v_department_exists NUMBER := 0;
+    v_budget_valid NUMBER := 1;
 BEGIN
     -- Initialize outputs
     p_success := 0;
     p_new_id := NULL;
+    p_error_code := 0;
+    p_error_message := NULL;
     
     -- Input validation
     IF p_title IS NULL OR p_recruiter_id IS NULL OR p_department_id IS NULL THEN
+        p_error_code := 400;
+        p_error_message := 'Missing required fields: Title, Recruiter ID, and Department ID are required';
+        RETURN;
+    END IF;
+    
+    -- Validate budget is not negative
+    IF p_budget < 0 THEN
+        p_error_code := 400;
+        p_error_message := 'Invalid budget: Budget cannot be negative';
+        v_budget_valid := 0;
+    END IF;
+    
+    -- Check if recruiter exists
+    BEGIN
+        SELECT 1 INTO v_recruiter_exists 
+        FROM "RECRUITER" 
+        WHERE "ID" = p_recruiter_id
+        AND ROWNUM = 1;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            v_recruiter_exists := 0;
+    END;
+    
+    -- Check if department exists
+    BEGIN
+        SELECT 1 INTO v_department_exists 
+        FROM "DEPARTMENT" 
+        WHERE "ID" = p_department_id
+        AND ROWNUM = 1;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            v_department_exists := 0;
+    END;
+    
+    -- Validate references
+    IF v_recruiter_exists = 0 OR v_department_exists = 0 OR v_budget_valid = 0 THEN
+        p_error_code := 404;
+        p_error_message := 'Validation failed: ' || 
+                          CASE 
+                              WHEN v_recruiter_exists = 0 THEN 'Recruiter not found. '
+                              ELSE '' 
+                          END ||
+                          CASE 
+                              WHEN v_department_exists = 0 THEN 'Department not found. '
+                              ELSE '' 
+                          END ||
+                          CASE 
+                              WHEN v_budget_valid = 0 THEN 'Invalid budget.'
+                              ELSE '' 
+                          END;
         RETURN;
     END IF;
     

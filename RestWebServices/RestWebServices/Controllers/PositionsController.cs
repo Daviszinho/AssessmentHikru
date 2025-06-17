@@ -54,28 +54,53 @@ namespace RestWebServices.Controllers
                 if (position == null)
                 {
                     Console.WriteLine($"{_timestamp} [ERROR] Position data is null");
-                    return BadRequest("Position data is required");
+                    return BadRequest(new { message = "Position data is required" });
                 }
 
                 // Clear the ID to ensure we're creating a new record
                 position.Id = 0;
                 
                 // Call the repository to create the position
-                var newId = await _positionRepository.AddPositionAsync(position);
+                var (newId, statusCode, errorMessage) = await _positionRepository.AddPositionAsync(position);
                 
-                if (!newId.HasValue)
+                // Handle different status codes
+                switch (statusCode)
                 {
-                    Console.WriteLine($"{_timestamp} [ERROR] Failed to create position");
-                    return StatusCode(500, "Failed to create position");
+                    case 200: // Success
+                        if (newId.HasValue)
+                        {
+                            // Get the newly created position to return
+                            var createdPosition = await _positionRepository.GetPositionByIdAsync(newId.Value);
+                            if (createdPosition == null)
+                            {
+                                Console.WriteLine($"{_timestamp} [ERROR] Failed to retrieve created position with ID: {newId}");
+                                return StatusCode(500, new { message = "Position created but could not be retrieved" });
+                            }
+                            Console.WriteLine($"{_timestamp} [INFO] Successfully created position with ID: {newId}");
+                            return CreatedAtAction(nameof(GetPosition), new { id = newId }, createdPosition);
+                        }
+                        break;
+                        
+                    case 400: // Bad Request
+                        Console.WriteLine($"{_timestamp} [ERROR] Bad request: {errorMessage}");
+                        return BadRequest(new { message = errorMessage });
+                        
+                    case 401: // Unauthorized
+                        Console.WriteLine($"{_timestamp} [ERROR] Unauthorized: {errorMessage}");
+                        return Unauthorized(new { message = errorMessage ?? "Authentication required" });
+                        
+                    case 403: // Forbidden
+                        Console.WriteLine($"{_timestamp} [ERROR] Forbidden: {errorMessage}");
+                        return StatusCode(403, new { message = errorMessage ?? "Access denied" });
+                        
+                    case 404: // Not Found
+                        Console.WriteLine($"{_timestamp} [ERROR] Not found: {errorMessage}");
+                        return NotFound(new { message = errorMessage ?? "Requested resource not found" });
                 }
                 
-                // Get the newly created position to return
-                var createdPosition = await _positionRepository.GetPositionByIdAsync(newId.Value);
-                if (createdPosition == null)
-                {
-                    Console.WriteLine($"{_timestamp} [ERROR] Failed to retrieve created position with ID: {newId}");
-                    return StatusCode(500, "Position created but could not be retrieved");
-                }
+                // Default error case
+                Console.WriteLine($"{_timestamp} [ERROR] Failed to create position: {errorMessage}");
+                return StatusCode(500, new { message = errorMessage ?? "An unexpected error occurred" });
                 
                 Console.WriteLine($"{_timestamp} [INFO] Successfully created position with ID: {newId}");
                 return CreatedAtAction(nameof(GetPosition), new { id = newId }, createdPosition);
