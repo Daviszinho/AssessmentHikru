@@ -42,6 +42,52 @@ namespace RestWebServices.Controllers
             return position;
         }
 
+        // POST: api/positions
+        [HttpPost]
+        public async Task<ActionResult<Position>> CreatePosition([FromBody] Position position)
+        {
+            try
+            {
+                Console.WriteLine($"{_timestamp} [INFO] Creating new position");
+                
+                // Basic validation
+                if (position == null)
+                {
+                    Console.WriteLine($"{_timestamp} [ERROR] Position data is null");
+                    return BadRequest("Position data is required");
+                }
+
+                // Clear the ID to ensure we're creating a new record
+                position.Id = 0;
+                
+                // Call the repository to create the position
+                var newId = await _positionRepository.AddPositionAsync(position);
+                
+                if (!newId.HasValue)
+                {
+                    Console.WriteLine($"{_timestamp} [ERROR] Failed to create position");
+                    return StatusCode(500, "Failed to create position");
+                }
+                
+                // Get the newly created position to return
+                var createdPosition = await _positionRepository.GetPositionByIdAsync(newId.Value);
+                if (createdPosition == null)
+                {
+                    Console.WriteLine($"{_timestamp} [ERROR] Failed to retrieve created position with ID: {newId}");
+                    return StatusCode(500, "Position created but could not be retrieved");
+                }
+                
+                Console.WriteLine($"{_timestamp} [INFO] Successfully created position with ID: {newId}");
+                return CreatedAtAction(nameof(GetPosition), new { id = newId }, createdPosition);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{_timestamp} [ERROR] Error creating position: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                return StatusCode(500, "An error occurred while creating the position");
+            }
+        }
+
         // PUT: api/positions/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePosition(int id, [FromBody] Position position)
@@ -64,30 +110,6 @@ namespace RestWebServices.Controllers
             {
                 _logger.LogError(ex, "Error updating position with ID {PositionId}", id);
                 return StatusCode(500, new { message = "An error occurred while updating the position", error = ex.Message });
-            }
-        }
-
-        // POST: api/positions
-        [HttpPost]
-        public async Task<ActionResult<Position>> PostPosition([FromBody] Position position)
-        {
-            try
-            {
-                var success = await _positionRepository.AddPositionAsync(position);
-                if (success)
-                {
-                    return CreatedAtAction(nameof(GetPosition), new { id = position.Id }, position);
-                }
-                return BadRequest(new { message = "Failed to create position" });
-            }
-            catch (NotImplementedException)
-            {
-                return StatusCode(501, new { message = "Position creation is not yet implemented" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating position");
-                return StatusCode(500, new { message = "An error occurred while creating the position", error = ex.Message });
             }
         }
 

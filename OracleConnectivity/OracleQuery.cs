@@ -378,15 +378,22 @@ namespace Hikru.Assessment.OracleConnectivity
                         }
                     }
 
-                    // Add success output parameter (only p_success, no p_message)
-                    var successParam = new OracleParameter
+                    // Find the success parameter in the provided parameters
+                    var successParam = parameters?.FirstOrDefault(p => 
+                        p.ParameterName.Equals("p_success", StringComparison.OrdinalIgnoreCase));
+                    
+                    if (successParam == null)
                     {
-                        ParameterName = "p_success",
-                        OracleDbType = OracleDbType.Int32,
-                        Direction = ParameterDirection.Output,
-                        Size = 22  // Explicit size for Oracle NUMBER type
-                    };
-                    command.Parameters.Add(successParam);
+                        // If not found, add it
+                        successParam = new OracleParameter
+                        {
+                            ParameterName = "p_success",
+                            OracleDbType = OracleDbType.Int32,
+                            Direction = ParameterDirection.Output,
+                            Size = 22  // Explicit size for Oracle NUMBER type
+                        };
+                        command.Parameters.Add(successParam);
+                    }
                     
                     // Log the parameter types before execution
                     Console.WriteLine("[OracleQuery] Parameter types before execution:");

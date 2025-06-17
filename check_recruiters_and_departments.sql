@@ -1,0 +1,5 @@
+-- Check available recruiters
+SELECT ID, NAME FROM "RECRUITER" FETCH FIRST 10 ROWS ONLY;
+
+-- Check available departments
+SELECT ID, NAME FROM "DEPARTMENT" FETCH FIRST 10 ROWS ONLY;
