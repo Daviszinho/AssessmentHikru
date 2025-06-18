@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PositionTable from './components/PositionsTable.tsx';
 import type { Position } from './components/PositionsTable.tsx';
 import reactLogo from './assets/react.svg';
@@ -18,13 +18,6 @@ const App: React.FC = () => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Set focus to main content area after navigation
-  const focusMainContent = useCallback(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.focus();
-    }
-  }, []);
 
   // Handle skip to content
   const handleSkipToContent = (e: React.KeyboardEvent) => {
