@@ -11,7 +11,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Lib.Repository.Repository
 {
-    public class PositionRepository : IDisposable
+    public class PositionRepository : IDisposable, IPositionRepository
     {
         private readonly OracleQuery _oracleQuery;
         private bool _disposed = false;

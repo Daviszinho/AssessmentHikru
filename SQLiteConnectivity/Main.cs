@@ -1,11 +1,21 @@
 using Microsoft.Data.Sqlite;
+using System.Data;
 using System.IO;
+using System.Threading.Tasks;
+using SQLiteConnectivity.Repository;
+using Lib.Repository.Entities;
 
 public class Program
 {
     private const string DatabaseFileName = "db_hikru_test.db";
 
-    public static void Main(string[] args)
+    private static string Truncate(string value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Length <= maxLength ? value : value.Substring(0, maxLength - 3) + "...";
+    }
+
+    public static async Task Main(string[] args)
     {
         try
         {
@@ -24,81 +34,34 @@ public class Program
                 connection.Open();
                 Console.WriteLine($"Successfully connected to database: {DatabaseFileName}");
                 
-                // Create Department table if it doesn't exist
-                using (var command = connection.CreateCommand())
+                // Create and use PositionRepository
+                var positionRepository = new PositionRepository(connectionString);
+                var positions = await positionRepository.GetAllPositionsAsync();
+
+                // Display positions
+                Console.WriteLine("\nPositions in the database:");
+                Console.WriteLine(new string('-', 100));
+                Console.WriteLine($"{"ID",-5} | {"Title",-20} | {"Status",-15} | {"Location",-15} | {"Department",-20} | {"Recruiter",-20}");
+                Console.WriteLine(new string('-', 100));
+
+                foreach (var position in positions)
                 {
-                    command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS Department (
-                            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            NAME TEXT NOT NULL
-                        )";
-                    
-                    command.ExecuteNonQuery();
-                    Console.WriteLine("Department table created or already exists");
-                }
-                
-                // Create Recruiter table if it doesn't exist
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS Recruiter (
-                            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            NAME TEXT NOT NULL
-                        )";
-                    
-                    command.ExecuteNonQuery();
-                    Console.WriteLine("Recruiter table created or already exists");
+                    Console.WriteLine($"{position.Id,-5} | {Truncate(position.Title, 18),-20} | {position.Status ?? "N/A",-15} | {position.Location ?? "N/A",-15} | {Truncate(position.DepartmentName ?? "N/A", 18),-20} | {Truncate(position.RecruiterName ?? "N/A", 18),-20}");
                 }
 
-                // Create Position table if it doesn't exist
-                using (var command = connection.CreateCommand())
+                // Get and display position with ID 1
+                Console.WriteLine("\nFetching position with ID 1:");
+                var positionById = await positionRepository.GetPositionByIdAsync(1);
+                if (positionById != null)
                 {
-                    command.CommandText = @"
-                        CREATE TABLE IF NOT EXISTS Position (
-                            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            TITLE TEXT NOT NULL,
-                            DESCRIPTION TEXT NOT NULL,
-                            LOCATION TEXT NOT NULL,
-                            STATUS TEXT NOT NULL,
-                            RECRUITERID INTEGER NOT NULL,
-                            DEPARTMENTID INTEGER NOT NULL,
-                            BUDGET REAL,
-                            CLOSINGDATE TEXT,
-                            CREATEDAT TEXT DEFAULT CURRENT_TIMESTAMP,
-                            UPDATEDAT TEXT DEFAULT CURRENT_TIMESTAMP,
-                            FOREIGN KEY (RECRUITERID) REFERENCES Recruiter(ID) ON DELETE CASCADE,
-                            FOREIGN KEY (DEPARTMENTID) REFERENCES Department(ID) ON DELETE CASCADE
-                        )";
-                    
-                    command.ExecuteNonQuery();
-                    Console.WriteLine("Position table created or already exists");
+                    Console.WriteLine(new string('-', 100));
+                    Console.WriteLine($"{"ID",-5} | {"Title",-20} | {"Status",-15} | {"Location",-15} | {"Department",-20} | {"Recruiter",-20}");
+                    Console.WriteLine(new string('-', 100));
+                    Console.WriteLine($"{positionById.Id,-5} | {Truncate(positionById.Title, 18),-20} | {positionById.Status ?? "N/A",-15} | {positionById.Location ?? "N/A",-15} | {Truncate(positionById.DepartmentName ?? "N/A", 18),-20} | {Truncate(positionById.RecruiterName ?? "N/A", 18),-20}");
                 }
-
-                // Create PositionDetails view that joins all three tables
-                using (var command = connection.CreateCommand())
+                else
                 {
-                    command.CommandText = @"
-                        CREATE VIEW IF NOT EXISTS PositionDetails AS
-                        SELECT 
-                            p.ID as PositionID,
-                            p.TITLE as PositionTitle,
-                            p.DESCRIPTION as PositionDescription,
-                            p.LOCATION as PositionLocation,
-                            p.STATUS as PositionStatus,
-                            p.BUDGET as PositionBudget,
-                            p.CLOSINGDATE as PositionClosingDate,
-                            p.CREATEDAT as PositionCreatedAt,
-                            p.UPDATEDAT as PositionUpdatedAt,
-                            r.ID as RecruiterID,
-                            r.NAME as RecruiterName,
-                            d.ID as DepartmentID,
-                            d.NAME as DepartmentName
-                        FROM Position p
-                        JOIN Recruiter r ON p.RECRUITERID = r.ID
-                        JOIN Department d ON p.DEPARTMENTID = d.ID";
-                    
-                    command.ExecuteNonQuery();
-                    Console.WriteLine("PositionDetails view created or already exists");
+                    Console.WriteLine("Position with ID 1 not found.");
                 }
                 
                 connection.Close();
@@ -108,6 +71,8 @@ public class Program
         {
             Console.WriteLine($"An error occurred: {ex.Message}");
         }
+        
+        Console.WriteLine("\nPress any key to exit...");
+        Console.ReadKey();
     }
 }
-
