@@ -8,8 +8,6 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  AZURE_WEBAPP_NAME: 'HikruTest'
-  AZURE_WEBAPP_PACKAGE_PATH: './publish'
 
 jobs:
   build:
@@ -34,33 +32,3 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
       working-directory: ./
-
-    - name: Publish
-      run: |
-        dotnet publish -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-      working-directory: ./
-        
-    - name: Upload artifact for deployment job
-      uses: actions/upload-artifact@v4
-      with:
-        name: .net-app
-        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        retention-days: 1
-
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    environment: production
-    
-    steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v4
-      with:
-        name: .net-app
-
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
