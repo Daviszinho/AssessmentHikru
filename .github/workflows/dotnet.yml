@@ -25,16 +25,20 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: ./
 
     - name: Build
       run: dotnet build --no-restore --configuration Release
+      working-directory: ./
 
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      working-directory: ./
 
     - name: Publish
       run: |
         dotnet publish -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+      working-directory: ./
         
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
