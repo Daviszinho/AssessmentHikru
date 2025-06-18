@@ -35,24 +35,22 @@ namespace SQLiteConnectivity.Repository
             var positions = new List<Position>();
             
             using (var connection = GetConnection())
-            using (var command = new SqliteCommand("SELECT * FROM PositionDetails", connection))
+            using (var command = new SqliteCommand("SELECT * FROM Position", connection))
             using (var reader = await command.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
                 {
                     positions.Add(new Position
                     {
-                        Id = reader.GetInt32(reader.GetOrdinal("PositionID")),
-                        Title = reader.GetString(reader.GetOrdinal("PositionTitle")),
-                        Description = reader.IsDBNull(reader.GetOrdinal("PositionDescription")) ? null : reader.GetString(reader.GetOrdinal("PositionDescription")),
-                        Location = reader.IsDBNull(reader.GetOrdinal("PositionLocation")) ? null : reader.GetString(reader.GetOrdinal("PositionLocation")),
-                        DepartmentId = reader.IsDBNull(reader.GetOrdinal("DepartmentID")) ? null : reader.GetInt32(reader.GetOrdinal("DepartmentID")),
-                        RecruiterId = reader.IsDBNull(reader.GetOrdinal("RecruiterID")) ? null : reader.GetInt32(reader.GetOrdinal("RecruiterID")),
-                        Budget = reader.IsDBNull(reader.GetOrdinal("PositionBudget")) ? null : reader.GetDecimal(reader.GetOrdinal("PositionBudget")),
-                        ClosingDate = reader.IsDBNull(reader.GetOrdinal("PositionClosingDate")) ? null : DateTime.Parse(reader.GetString(reader.GetOrdinal("PositionClosingDate"))),
-                        Status = reader.IsDBNull(reader.GetOrdinal("PositionStatus")) ? null : reader.GetString(reader.GetOrdinal("PositionStatus")),
-                        DepartmentName = reader.IsDBNull(reader.GetOrdinal("DepartmentName")) ? null : reader.GetString(reader.GetOrdinal("DepartmentName")),
-                        RecruiterName = reader.IsDBNull(reader.GetOrdinal("RecruiterName")) ? null : reader.GetString(reader.GetOrdinal("RecruiterName"))
+                        Id = reader.GetInt32(reader.GetOrdinal("ID")),
+                        Title = reader.GetString(reader.GetOrdinal("TITLE")),
+                        Description = reader.IsDBNull(reader.GetOrdinal("DESCRIPTION")) ? null : reader.GetString(reader.GetOrdinal("DESCRIPTION")),
+                        Location = reader.IsDBNull(reader.GetOrdinal("LOCATION")) ? null : reader.GetString(reader.GetOrdinal("LOCATION")),
+                        DepartmentId = reader.IsDBNull(reader.GetOrdinal("DEPARTMENTID")) ? null : reader.GetInt32(reader.GetOrdinal("DEPARTMENTID")),
+                        RecruiterId = reader.IsDBNull(reader.GetOrdinal("RECRUITERID")) ? null : reader.GetInt32(reader.GetOrdinal("RECRUITERID")),
+                        Budget = reader.IsDBNull(reader.GetOrdinal("BUDGET")) ? null : reader.GetDecimal(reader.GetOrdinal("BUDGET")),
+                        ClosingDate = reader.IsDBNull(reader.GetOrdinal("CLOSINGDATE")) ? null : reader.GetDateTime(reader.GetOrdinal("CLOSINGDATE")),
+                        Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS"))
                     });
                 }
             }
@@ -63,7 +61,7 @@ namespace SQLiteConnectivity.Repository
         public async Task<Position?> GetPositionByIdAsync(int positionId)
         {
             using (var connection = GetConnection())
-            using (var command = new SqliteCommand("SELECT * FROM Positions WHERE Id = @Id", connection))
+            using (var command = new SqliteCommand("SELECT * FROM Position WHERE ID = @Id", connection))
             {
                 command.Parameters.AddWithValue("@Id", positionId);
                 
@@ -73,17 +71,15 @@ namespace SQLiteConnectivity.Repository
                     {
                         return new Position
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Title = reader.GetString(reader.GetOrdinal("Title")),
-                            Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                            Location = reader.IsDBNull(reader.GetOrdinal("Location")) ? null : reader.GetString(reader.GetOrdinal("Location")),
-                            DepartmentId = reader.IsDBNull(reader.GetOrdinal("DepartmentId")) ? null : reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                            RecruiterId = reader.IsDBNull(reader.GetOrdinal("RecruiterId")) ? null : reader.GetInt32(reader.GetOrdinal("RecruiterId")),
-                            Budget = reader.IsDBNull(reader.GetOrdinal("Budget")) ? null : reader.GetDecimal(reader.GetOrdinal("Budget")),
-                            ClosingDate = reader.IsDBNull(reader.GetOrdinal("ClosingDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ClosingDate")),
-                            Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? null : reader.GetString(reader.GetOrdinal("Status")),
-                            DepartmentName = reader.IsDBNull(reader.GetOrdinal("DepartmentName")) ? null : reader.GetString(reader.GetOrdinal("DepartmentName")),
-                            RecruiterName = reader.IsDBNull(reader.GetOrdinal("RecruiterName")) ? null : reader.GetString(reader.GetOrdinal("RecruiterName"))
+                            Id = reader.GetInt32(reader.GetOrdinal("ID")),
+                            Title = reader.GetString(reader.GetOrdinal("TITLE")),
+                            Description = reader.IsDBNull(reader.GetOrdinal("DESCRIPTION")) ? null : reader.GetString(reader.GetOrdinal("DESCRIPTION")),
+                            Location = reader.IsDBNull(reader.GetOrdinal("LOCATION")) ? null : reader.GetString(reader.GetOrdinal("LOCATION")),
+                            DepartmentId = reader.IsDBNull(reader.GetOrdinal("DEPARTMENTID")) ? null : reader.GetInt32(reader.GetOrdinal("DEPARTMENTID")),
+                            RecruiterId = reader.IsDBNull(reader.GetOrdinal("RECRUITERID")) ? null : reader.GetInt32(reader.GetOrdinal("RECRUITERID")),
+                            Budget = reader.IsDBNull(reader.GetOrdinal("BUDGET")) ? null : reader.GetDecimal(reader.GetOrdinal("BUDGET")),
+                            ClosingDate = reader.IsDBNull(reader.GetOrdinal("CLOSINGDATE")) ? null : reader.GetDateTime(reader.GetOrdinal("CLOSINGDATE")),
+                            Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS"))
                         };
                     }
                 }
@@ -95,8 +91,8 @@ namespace SQLiteConnectivity.Repository
         {
             using (var connection = GetConnection())
             using (var command = new SqliteCommand(
-                "INSERT INTO Positions (Title, Description, Location, DepartmentId, RecruiterId, Budget, ClosingDate, Status, DepartmentName, RecruiterName) " +
-                "VALUES (@Title, @Description, @Location, @DepartmentId, @RecruiterId, @Budget, @ClosingDate, @Status, @DepartmentName, @RecruiterName); " +
+                "INSERT INTO Position (Title, Description, Location, DepartmentID, RecruiterID, Budget, ClosingDate, Status) " +
+                "VALUES (@Title, @Description, @Location, @DepartmentId, @RecruiterId, @Budget, @ClosingDate, @Status); " +
                 "SELECT last_insert_rowid();", connection))
             {
                 AddPositionParameters(command, position);
@@ -109,10 +105,10 @@ namespace SQLiteConnectivity.Repository
         {
             using (var connection = GetConnection())
             using (var command = new SqliteCommand(
-                "UPDATE Positions SET Title = @Title, Description = @Description, Location = @Location, " +
-                "DepartmentId = @DepartmentId, RecruiterId = @RecruiterId, Budget = @Budget, " +
-                "ClosingDate = @ClosingDate, Status = @Status, DepartmentName = @DepartmentName, " +
-                "RecruiterName = @RecruiterName WHERE Id = @Id", connection))
+                "UPDATE Position SET Title = @Title, Description = @Description, " +
+                "Location = @Location, DepartmentID = @DepartmentId, RecruiterID = @RecruiterId, " +
+                "Budget = @Budget, ClosingDate = @ClosingDate, Status = @Status " +
+                "WHERE ID = @Id", connection))
             {
                 command.Parameters.AddWithValue("@Id", position.Id);
                 AddPositionParameters(command, position);
@@ -124,7 +120,7 @@ namespace SQLiteConnectivity.Repository
         public async Task<bool> RemovePositionAsync(int positionId)
         {
             using (var connection = GetConnection())
-            using (var command = new SqliteCommand("DELETE FROM Positions WHERE Id = @Id", connection))
+            using (var command = new SqliteCommand("DELETE FROM Position WHERE ID = @Id", connection))
             {
                 command.Parameters.AddWithValue("@Id", positionId);
                 return await command.ExecuteNonQueryAsync() > 0;
@@ -135,16 +131,28 @@ namespace SQLiteConnectivity.Repository
         {
             if (position == null) throw new ArgumentNullException(nameof(position));
             
-            command.Parameters.AddWithValue("@Title", position.Title);
+            // Required fields
+            command.Parameters.AddWithValue("@Title", position.Title ?? string.Empty);
+            
+            // Optional fields
             AddNullableParameter(command, "@Description", position.Description);
             AddNullableParameter(command, "@Location", position.Location);
             AddNullableParameter(command, "@DepartmentId", position.DepartmentId);
             AddNullableParameter(command, "@RecruiterId", position.RecruiterId);
             AddNullableParameter(command, "@Budget", position.Budget);
-            AddNullableParameter(command, "@ClosingDate", position.ClosingDate);
-            AddNullableParameter(command, "@Status", position.Status);
-            AddNullableParameter(command, "@DepartmentName", position.DepartmentName);
-            AddNullableParameter(command, "@RecruiterName", position.RecruiterName);
+            
+            // Handle ClosingDate - convert to ISO 8601 string format for SQLite
+            if (position.ClosingDate.HasValue)
+            {
+                command.Parameters.AddWithValue("@ClosingDate", position.ClosingDate.Value.ToString("yyyy-MM-dd"));
+            }
+            else
+            {
+                command.Parameters.AddWithValue("@ClosingDate", DBNull.Value);
+            }
+            
+            // Status is required in the database schema
+            command.Parameters.AddWithValue("@Status", position.Status ?? "Open");
         }
 
         private static void AddNullableParameter<T>(SqliteCommand command, string parameterName, T? value) where T : struct

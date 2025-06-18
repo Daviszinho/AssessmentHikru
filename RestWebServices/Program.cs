@@ -10,6 +10,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
+// Configure CORS to allow requests from the React frontend
+var reactAppUrl = builder.Configuration["ReactAppUrl"] ?? "http://localhost:3000";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        builder =>
+        {
+            builder.WithOrigins(reactAppUrl)
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowCredentials();
+        });
+});
+
 // Get connection string from configuration
 var connectionString = builder.Configuration.GetConnectionString("SQLiteConnection");
 if (string.IsNullOrEmpty(connectionString))
@@ -37,6 +52,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable CORS with the configured policy
+app.UseCors("AllowReactApp");
+
 app.UseAuthorization();
 app.MapControllers();
 
