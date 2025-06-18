@@ -141,10 +141,10 @@ Console.WriteLine($"OracleDbUser: {oracleDbUser}");
 Console.WriteLine($"OracleDbPassword: {(string.IsNullOrEmpty(oracleDbPassword) ? "Not set" : "*****"}");
 
 // Construct the connection string
-var connectionString = $"User Id={oracleDbUser};Password={oracleDbPassword};Data Source={configuration.GetValue<string>("OracleSettings:TnsName")};";
+var connectionString = $"User Id={oracleDbUser};Password={oracleDbPassword};Data Source=oracletest_high;";
 
 // Log the connection string (without password)
-var safeConnectionString = $"User Id={oracleDbUser};Password=*****;Data Source={configuration.GetValue<string>("OracleSettings:TnsName")};";
+var safeConnectionString = $"User Id={oracleDbUser};Password=*****;Data Source=oracletest_high;";
 Console.WriteLine($"Using connection string: {safeConnectionString}");
 
 // Add services with dependency injection
