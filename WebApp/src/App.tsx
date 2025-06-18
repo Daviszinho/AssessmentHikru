@@ -251,7 +251,7 @@ const App: React.FC = () => {
 
       <header className="app-header" role="banner">
         <h1>Welcome to Hikrutech - Full Stack Lead</h1>
-        <h2>Full Stack Lead - Davis Penaranda</h2>
+        <h2>Full Stack Lead - Davis Peñaranda</h2>
         <nav aria-label="External links">
           <ul className="logo-list">
             <li>
