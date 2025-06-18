@@ -110,9 +110,6 @@ void LogDirectoryContents(string directory, string description)
         var files = Directory.GetFiles(directory);
         Console.WriteLine($"Found {files.Length} files in directory:");
         foreach (var file in files)
-        var walletFiles = Directory.GetFiles(walletLocation);
-        Console.WriteLine($"Found {walletFiles.Length} files in wallet directory:");
-        foreach (var file in walletFiles)
         {
             Console.WriteLine($"- {Path.GetFileName(file)}");
         }
@@ -122,9 +119,11 @@ void LogDirectoryContents(string directory, string description)
         Console.WriteLine($"Error listing wallet files: {ex.Message}");
     }
 }
-else
+
+// Check if wallet directory exists
+if (!Directory.Exists(walletLocation))
 {
-    Console.WriteLine($"Warning: Wallet directory not found at: {walletLocation} or TNS_ADMIN directory not found at: {tnsAdmin}");
+    Console.WriteLine($"Warning: Wallet directory not found at: {walletLocation}");
 }
 
 // Ensure we have the connection string in production
