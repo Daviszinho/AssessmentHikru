@@ -20,14 +20,10 @@
 
   <!-- Include wallet files in publish output -->
   <ItemGroup>
-    <None Update="wallet/**">
+    <Content Include="wallet\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="wallet\**" CopyToPublishDirectory="PreserveNewest" />
+    </Content>
   </ItemGroup>
 
 </Project>
