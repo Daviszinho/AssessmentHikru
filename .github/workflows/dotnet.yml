@@ -10,6 +10,11 @@ env:
   DOTNET_VERSION: '8.0.x'
   AZURE_WEBAPP_NAME: 'HikruTest'
   AZURE_WEBAPP_PACKAGE_PATH: './publish'
+  AZURE_RESOURCE_GROUP: 'YourResourceGroupName'  # Update this to your resource group name
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build:
@@ -60,10 +65,18 @@ jobs:
       with:
         name: .net-app
         path: ./
+        
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        resource-group: ${{ env.AZURE_RESOURCE_GROUP }}
+        slot-name: 'production'
