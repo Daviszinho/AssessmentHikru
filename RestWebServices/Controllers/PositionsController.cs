@@ -10,14 +10,14 @@ namespace RestWebServices.Controllers
     public class PositionsController : ControllerBase
     {
         private readonly ILogger<PositionsController> _logger;
-        private readonly PositionRepository _positionRepository;
+        private readonly IPositionRepository _positionRepository;
         private string _timestamp => $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]";
 
-        public PositionsController(ILogger<PositionsController> logger, PositionRepository positionRepository)
+        public PositionsController(ILogger<PositionsController> logger, IPositionRepository positionRepository)
         {
             _logger = logger;
-            _positionRepository = positionRepository;
-            Console.WriteLine($"{_timestamp} [INFO] PositionsController initialized");
+            _positionRepository = positionRepository ?? throw new ArgumentNullException(nameof(positionRepository));
+            _logger.LogInformation("PositionsController initialized");
         }
 
         // GET: api/positions
@@ -61,46 +61,23 @@ namespace RestWebServices.Controllers
                 position.Id = 0;
                 
                 // Call the repository to create the position
-                var (newId, statusCode, errorMessage) = await _positionRepository.AddPositionAsync(position);
+                var newId = await _positionRepository.AddPositionAsync(position);
                 
-                // Handle different status codes
-                switch (statusCode)
+                if (newId.HasValue)
                 {
-                    case 200: // Success
-                        if (newId.HasValue)
-                        {
-                            // Get the newly created position to return
-                            var createdPosition = await _positionRepository.GetPositionByIdAsync(newId.Value);
-                            if (createdPosition == null)
-                            {
-                                Console.WriteLine($"{_timestamp} [ERROR] Failed to retrieve created position with ID: {newId}");
-                                return StatusCode(500, new { message = "Position created but could not be retrieved" });
-                            }
-                            Console.WriteLine($"{_timestamp} [INFO] Successfully created position with ID: {newId}");
-                            return CreatedAtAction(nameof(GetPosition), new { id = newId }, createdPosition);
-                        }
-                        break;
-                        
-                    case 400: // Bad Request
-                        Console.WriteLine($"{_timestamp} [ERROR] Bad request: {errorMessage}");
-                        return BadRequest(new { message = errorMessage });
-                        
-                    case 401: // Unauthorized
-                        Console.WriteLine($"{_timestamp} [ERROR] Unauthorized: {errorMessage}");
-                        return Unauthorized(new { message = errorMessage ?? "Authentication required" });
-                        
-                    case 403: // Forbidden
-                        Console.WriteLine($"{_timestamp} [ERROR] Forbidden: {errorMessage}");
-                        return StatusCode(403, new { message = errorMessage ?? "Access denied" });
-                        
-                    case 404: // Not Found
-                        Console.WriteLine($"{_timestamp} [ERROR] Not found: {errorMessage}");
-                        return NotFound(new { message = errorMessage ?? "Requested resource not found" });
+                    // Get the newly created position to return
+                    var createdPosition = await _positionRepository.GetPositionByIdAsync(newId.Value);
+                    if (createdPosition == null)
+                    {
+                        _logger.LogError("Failed to retrieve created position with ID: {PositionId}", newId);
+                        return StatusCode(500, new { message = "Position created but could not be retrieved" });
+                    }
+                    _logger.LogInformation("Successfully created position with ID: {PositionId}", newId);
+                    return CreatedAtAction(nameof(GetPosition), new { id = newId }, createdPosition);
                 }
                 
-                // If we get here, it means we didn't handle all status codes in the switch
-                Console.WriteLine($"{_timestamp} [ERROR] Unhandled status code {statusCode} when creating position: {errorMessage}");
-                return StatusCode(500, new { message = errorMessage ?? "An unexpected error occurred" });
+                _logger.LogError("Failed to create position");
+                return StatusCode(500, new { message = "Failed to create position" });
             }
             catch (Exception ex)
             {

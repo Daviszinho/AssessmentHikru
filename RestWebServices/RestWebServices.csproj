@@ -11,11 +11,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1-Preview.1" />
-    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.8.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
+    <ProjectReference Include="..\SQLiteConnectivity\SQLiteConnectivity.csproj" />
   </ItemGroup>
 
   <!-- Include wallet files in publish output -->
