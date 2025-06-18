@@ -10,7 +10,7 @@ env:
   DOTNET_VERSION: '8.0.x'
   AZURE_WEBAPP_NAME: 'HikruTest'
   AZURE_WEBAPP_PACKAGE_PATH: './publish'
-  AZURE_RESOURCE_GROUP: 'YourResourceGroupName'  # Update this to your resource group name
+  AZURE_RESOURCE_GROUP: 'HikruTestResourceGroup'
 
 permissions:
   id-token: write
