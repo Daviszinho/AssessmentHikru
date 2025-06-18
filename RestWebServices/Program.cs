@@ -25,12 +25,24 @@ builder.Services.AddCors(options =>
         });
 });
 
-// Get connection string from configuration
-var connectionString = builder.Configuration.GetConnectionString("SQLiteConnection");
+// Get the appropriate connection string based on environment
+var isProduction = builder.Environment.IsProduction();
+var connectionStringName = isProduction ? "SQLiteConnection_Production" : "SQLiteConnection_Development";
+var connectionString = builder.Configuration.GetConnectionString(connectionStringName);
+
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("SQLite connection string is not configured.");
+    throw new InvalidOperationException($"SQLite connection string '{connectionStringName}' is not configured.");
 }
+
+// Log the environment and connection string being used
+var logger = LoggerFactory.Create(config =>
+{
+    config.AddConsole();
+}).CreateLogger("Program");
+
+logger.LogInformation($"Environment: {builder.Environment.EnvironmentName}");
+logger.LogInformation($"Using connection string: {connectionStringName}");
 
 // Register PositionRepository with SQLite
 builder.Services.AddScoped<IPositionRepository>(_ => new PositionRepository(connectionString));
