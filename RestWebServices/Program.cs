@@ -126,12 +126,26 @@ if (!Directory.Exists(walletLocation))
     Console.WriteLine($"Warning: Wallet directory not found at: {walletLocation}");
 }
 
-// Ensure we have the connection string in production
-var connectionString = configuration.GetConnectionString("OracleConnection");
-if (string.IsNullOrEmpty(connectionString) && !builder.Environment.IsDevelopment())
+// Get Oracle credentials from environment variables
+var oracleDbUser = Environment.GetEnvironmentVariable("OracleDbUser");
+var oracleDbPassword = Environment.GetEnvironmentVariable("OracleDbPassword");
+
+// Validate required environment variables
+if (string.IsNullOrEmpty(oracleDbUser) || string.IsNullOrEmpty(oracleDbPassword))
 {
-    throw new InvalidOperationException("Oracle connection string is not configured in appsettings.json");
+    throw new InvalidOperationException("Oracle database credentials are not configured. Please set OracleDbUser and OracleDbPassword environment variables.");
 }
+
+// Log the environment variables for debugging (without password)
+Console.WriteLine($"OracleDbUser: {oracleDbUser}");
+Console.WriteLine($"OracleDbPassword: {(string.IsNullOrEmpty(oracleDbPassword) ? "Not set" : "*****"}");
+
+// Construct the connection string
+var connectionString = $"User Id={oracleDbUser};Password={oracleDbPassword};Data Source={configuration.GetValue<string>("OracleSettings:TnsName")};";
+
+// Log the connection string (without password)
+var safeConnectionString = $"User Id={oracleDbUser};Password=*****;Data Source={configuration.GetValue<string>("OracleSettings:TnsName")};";
+Console.WriteLine($"Using connection string: {safeConnectionString}");
 
 // Add services with dependency injection
 builder.Services.AddScoped<Lib.Repository.Repository.PositionRepository>(provider => 
