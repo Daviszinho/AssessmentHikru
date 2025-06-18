@@ -98,12 +98,9 @@ namespace RestWebServices.Controllers
                         return NotFound(new { message = errorMessage ?? "Requested resource not found" });
                 }
                 
-                // Default error case
-                Console.WriteLine($"{_timestamp} [ERROR] Failed to create position: {errorMessage}");
+                // If we get here, it means we didn't handle all status codes in the switch
+                Console.WriteLine($"{_timestamp} [ERROR] Unhandled status code {statusCode} when creating position: {errorMessage}");
                 return StatusCode(500, new { message = errorMessage ?? "An unexpected error occurred" });
-                
-                Console.WriteLine($"{_timestamp} [INFO] Successfully created position with ID: {newId}");
-                return CreatedAtAction(nameof(GetPosition), new { id = newId }, createdPosition);
             }
             catch (Exception ex)
             {

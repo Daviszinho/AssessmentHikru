@@ -9,20 +9,22 @@ builder.Services.AddControllers();
 // Add OpenAPI support
 builder.Services.AddOpenApi();
 
-// Configure CORS - Allow all for development
-Console.WriteLine("Configuring CORS to allow all origins for development");
+// Configure CORS with specific origins
+var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:53614";
+Console.WriteLine($"Configuring CORS to allow origin: {frontendUrl}");
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowFrontend", builder =>
     {
-        builder.AllowAnyOrigin()
+        builder.WithOrigins(frontendUrl)
                .AllowAnyMethod()
                .AllowAnyHeader()
+               .AllowCredentials()
                .WithExposedHeaders("*");
     });
     
-    Console.WriteLine("CORS policy 'AllowAll' has been configured");
+    Console.WriteLine("CORS policy 'AllowFrontend' has been configured");
 });
 
 var app = builder.Build();
@@ -38,8 +40,8 @@ app.UseHttpsRedirection();
 // IMPORTANT: The order of middleware is critical here
 app.UseRouting();
 
-// Enable CORS with the AllowAll policy
-app.UseCors("AllowAll");
+// Enable CORS with the AllowFrontend policy
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
