@@ -6,6 +6,8 @@ using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using Lib.Repository.Entities;
 using Hikru.Assessment.OracleConnectivity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace Lib.Repository.Repository
 {
@@ -13,10 +15,14 @@ namespace Lib.Repository.Repository
     {
         private readonly OracleQuery _oracleQuery;
         private bool _disposed = false;
+        private readonly IConfiguration _configuration;
+        private readonly IHostEnvironment _environment;
 
-        public PositionRepository()
+        public PositionRepository(IConfiguration configuration = null, IHostEnvironment environment = null)
         {
-            _oracleQuery = new OracleQuery();
+            _configuration = configuration;
+            _environment = environment;
+            _oracleQuery = new OracleQuery(_configuration, _environment);
         }
 
         // Get all positions

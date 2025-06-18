@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using System;
@@ -7,6 +8,7 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
+using Microsoft.Extensions.Hosting;
 
 namespace Hikru.Assessment.OracleConnectivity
 {
@@ -17,26 +19,44 @@ namespace Hikru.Assessment.OracleConnectivity
     {
         private OracleConnection? _connection;
         private bool _disposed = false;
-        private readonly string _connectionString;
+        private string _connectionString;
         private readonly string _configFile;
         private readonly string _connectionName;
+        private readonly IConfiguration _configuration;
+        private readonly IHostEnvironment _environment;
 
         /// <summary>
         /// Initializes a new instance of the OracleQuery class
         /// </summary>
-        public OracleQuery()
+        public OracleQuery(IConfiguration configuration = null, IHostEnvironment environment = null)
         {
+            _configuration = configuration;
+            _environment = environment;
             _connectionString = string.Empty;
             _configFile = string.Empty;
             _connectionName = string.Empty;
+            
+            // In production, try to get connection string from configuration
+            if (!(_environment?.IsDevelopment() ?? true) && _configuration != null)
+            {
+                _connectionString = _configuration.GetConnectionString("OracleConnection");
+            }
         }
         
         private async Task<OracleConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
         {
             if (_connection != null && _connection.State == ConnectionState.Open)
                 return _connection;
-                
-            // Use OracleInit to get a connection
+            
+            // In production, use the connection string directly if available
+            if (!string.IsNullOrEmpty(_connectionString))
+            {
+                _connection = new OracleConnection(_connectionString);
+                await _connection.OpenAsync(cancellationToken);
+                return _connection;
+            }
+            
+            // Fall back to OracleInit for development
             _connection = await OracleInit.ConnectToOracleAsync();
             return _connection;
         }

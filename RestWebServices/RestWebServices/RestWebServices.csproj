@@ -17,4 +17,8 @@
     <ProjectReference Include="..\..\Lib.Repository\Lib.Repository.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="wallet\**" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
