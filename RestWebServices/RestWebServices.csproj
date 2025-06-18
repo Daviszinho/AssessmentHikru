@@ -17,6 +17,14 @@
     <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
   </ItemGroup>
 
+  <!-- Include wallet files in publish output -->
+  <ItemGroup>
+    <None Update="wallet/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="wallet\**" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

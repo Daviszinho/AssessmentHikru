@@ -30,17 +30,17 @@ namespace Hikru.Assessment.OracleConnectivity
         /// </summary>
         public OracleQuery(IConfiguration configuration = null, IHostEnvironment environment = null)
         {
-            _configuration = configuration;
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _environment = environment;
             _connectionString = string.Empty;
             _configFile = string.Empty;
             _connectionName = string.Empty;
             
-            // In production, try to get connection string from configuration
-            if (!(_environment?.IsDevelopment() ?? true) && _configuration != null)
-            {
-                _connectionString = _configuration.GetConnectionString("OracleConnection");
-            }
+            // Get connection string from configuration
+            _connectionString = _configuration.GetConnectionString("OracleConnection") ?? 
+                              throw new InvalidOperationException("Oracle connection string is not configured");
+            
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [OracleQuery] Initialized with connection string: {_connectionString.Replace("Password=DavisOracle25!", "Password=*****")}");
         }
         
         private async Task<OracleConnection> GetConnectionAsync(CancellationToken cancellationToken = default)

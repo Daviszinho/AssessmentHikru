@@ -41,97 +41,22 @@ namespace Hikru.Assessment.OracleConnectivity
 
             Console.WriteLine("\n=== OracleInit: Starting connection process ===");
             Console.WriteLine($"Current Directory: {Directory.GetCurrentDirectory()}");
-            Console.WriteLine($"TNS_ADMIN: {Environment.GetEnvironmentVariable("TNS_ADMIN")}");
-            Console.WriteLine($"ORACLE_HOME: {Environment.GetEnvironmentVariable("ORACLE_HOME")}");
-            Console.WriteLine($"LD_LIBRARY_PATH: {Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}");
+            
+            // Get connection string from configuration
+            var connectionString = _configuration.GetConnectionString("OracleConnection") ?? 
+                                 throw new InvalidOperationException("Oracle connection string is not configured in appsettings.json");
+            
+            // Log the connection string (without password)
+            var safeConnectionString = connectionString.Replace("Password=DavisOracle25!", "Password=*****");
+            Console.WriteLine($"Using connection string: {safeConnectionString}");
 
             try
             {
-                // In Azure, the wallet is at /home/site/wwwroot/wallet
-                var walletPath = "/home/site/wwwroot/wallet";
-                Console.WriteLine($"\nChecking for wallet at: {walletPath}");
-
-                // Verify wallet directory exists and is accessible
-                if (!Directory.Exists(walletPath))
-                {
-                    Console.WriteLine($"❌ Wallet directory not found at: {walletPath}");
-                    Console.WriteLine("Trying alternative paths...");
-                    
-                    // Try alternative paths
-                    var alternativePath = Path.Combine(Directory.GetCurrentDirectory(), "wallet");
-                    if (Directory.Exists(alternativePath))
-                    {
-                        walletPath = alternativePath;
-                        Console.WriteLine($"✅ Found wallet at alternative path: {walletPath}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"❌ Wallet not found at alternative path: {alternativePath}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"✅ Wallet directory found at: {walletPath}");
-                }
-
-                // Log directory contents for debugging
-                LogDirectoryContents(walletPath, "Wallet directory");
-                LogDirectoryContents(Directory.GetCurrentDirectory(), "Current directory");
-
-                if (Directory.Exists(walletPath))
-                {
-                    try
-                    {
-                        Console.WriteLine("\nAttempting to connect with wallet...");
-                        Console.WriteLine($"Using TNS_ADMIN: {Environment.GetEnvironmentVariable("TNS_ADMIN")}");
-                        
-                        // Try to list TNS entries if tnsnames.ora exists
-                        var tnsNamesPath = Path.Combine(walletPath, "tnsnames.ora");
-                        if (File.Exists(tnsNamesPath))
-                        {
-                            Console.WriteLine($"Found tnsnames.ora at: {tnsNamesPath}");
-                            try
-                            {
-                                var tnsContent = File.ReadAllText(tnsNamesPath);
-                                Console.WriteLine($"TNS entries: {tnsContent}\n");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error reading tnsnames.ora: {ex.Message}");
-                            }
-                        }
-                        
-                        return await ConnectWithWalletAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"❌ Failed to connect with wallet: {ex.Message}");
-                        if (ex.InnerException != null)
-                        {
-                            Console.WriteLine($"❌ Inner exception: {ex.InnerException.Message}");
-                            if (ex.InnerException.InnerException != null)
-                            {
-                                Console.WriteLine($"❌ Inner inner exception: {ex.InnerException.InnerException.Message}");
-                            }
-                        }
-                        Console.WriteLine("⚠️ Falling back to connection string...");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"❌ Wallet directory not found at: {walletPath}");
-                    Console.WriteLine("⚠️ Falling back to connection string...");
-                }
-
-                Console.WriteLine("\nAttempting to connect with connection string...");
-                var connectionString = _configuration.GetConnectionString("OracleConnection");
-                if (string.IsNullOrEmpty(connectionString))
-                {
-                    connectionString = _configuration["OracleSettings:ConnectionString"];
-                }
-                Console.WriteLine($"Using connection string: {new string('*', connectionString?.Length ?? 0)}");
-                
-                return await ConnectWithConnectionStringAsync();
+                // Create and open the connection using the direct connection string
+                var connection = new OracleConnection(connectionString);
+                await connection.OpenAsync();
+                Console.WriteLine("✅ Successfully connected to Oracle database using direct connection");
+                return connection;
             }
             catch (Exception ex)
             {
