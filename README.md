@@ -105,12 +105,12 @@ Author: Davis Penaranda
    cd RestWebServices
    dotnet run
    ```
+   Access the application at `http://localhost:5246`
 
 4. Run the frontend:
    ```bash
    cd ../WebApp
-   npm install
-   npm run dev
+   dotnet run
    ```
 
 5. Access the application at `http://localhost:5173`
@@ -156,10 +156,11 @@ The application is configured for deployment to Azure Web Apps. Update the deplo
    ```bash
    dotnet run --project WebApp
    ```
-   The application will be available at `https://localhost:5001`
+   The application will be available at `https://localhost:53614`
 
 ### Running Tests
 ```bash
+cd API.Test
 dotnet test
 ```
 
