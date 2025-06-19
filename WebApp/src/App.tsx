@@ -337,6 +337,12 @@ const App: React.FC = () => {
           />
         )}
       </main>
+      
+      <footer className="app-footer" role="contentinfo">
+        <div className="footer-content">
+          <p>API Endpoint: <code>{API_URL}</code></p>
+        </div>
+      </footer>
     </div>
   );
 }
