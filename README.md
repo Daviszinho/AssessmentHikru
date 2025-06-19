@@ -36,7 +36,6 @@ Author: Davis Penaranda
    - Includes test cases for repository and service layers
    - Dotnet clean, dotnet build and dotnet test commands.
 
-
 4. **RestWebServices**
    - RESTful API endpoints for the application
    - Implements controllers for positions, recruiters, and departments
@@ -57,6 +56,7 @@ Author: Davis Penaranda
 - Implements CRUD operations for positions
 - Real-time data updates
 - Form validation and error handling
+- This project is integrated with Azure Static Web Apps and GitHub Actions for continuous deployment (CI/CD).
 - Run locally using: dotnet clean, dotnet build, dotnet run 
 
 ## Features
@@ -190,14 +190,10 @@ AssessmentHikru/
 ├── .github/workflows/    # GitHub Actions workflows
 ├── WebApp/              # Main web application
 ├── Lib.Repository/      # Data access layer
-└── Tests/               # Unit tests
+├── Tests/               # Unit tests
+├── RestWebServices/     # RESTful API endpoints
+├── OracleConnectivity/  # Optional Oracle database connectivity layer
+├── SQLiteConnectivity/  # SQLite database connectivity layer
+├── API.Test/            # Unit and integration tests
+└── README.md            # Project documentation
 ```
-
-## Contributing
-1. Create a new branch for your feature or bugfix
-2. Make your changes
-3. Run tests
-4. Submit a pull request
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
