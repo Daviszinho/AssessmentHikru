@@ -4,8 +4,24 @@ using Microsoft.Extensions.Hosting;
 using SQLiteConnectivity.Repository;
 using Lib.Repository.Repository;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+// Get environment and logger
+var environment = builder.Environment;
+var logger = LoggerFactory.Create(config =>
+{
+    config.AddConsole();
+    config.AddDebug();
+}).CreateLogger("ProgramStartup");
+
+logger.LogInformation($"Application starting in {environment.EnvironmentName} environment");
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -16,36 +32,59 @@ var reactAppUrl = builder.Configuration["ReactAppUrl"] ?? "http://localhost:3000
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        builder =>
+        policyBuilder =>
         {
-            builder.WithOrigins(reactAppUrl)
-                   .AllowAnyHeader()
-                   .AllowAnyMethod()
-                   .AllowCredentials();
+            policyBuilder.WithOrigins(reactAppUrl)
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials();
         });
 });
 
 // Get the appropriate connection string based on environment
-var isProduction = builder.Environment.IsProduction();
+var isProduction = environment.IsProduction();
 var connectionStringName = isProduction ? "SQLiteConnection_Production" : "SQLiteConnection_Development";
 var connectionString = builder.Configuration.GetConnectionString(connectionStringName);
 
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException($"SQLite connection string '{connectionStringName}' is not configured.");
+    var errorMessage = $"SQLite connection string '{connectionStringName}' is not configured.";
+    logger.LogError(errorMessage);
+    throw new InvalidOperationException(errorMessage);
 }
 
-// Log the environment and connection string being used
-var logger = LoggerFactory.Create(config =>
-{
-    config.AddConsole();
-}).CreateLogger("Program");
-
-logger.LogInformation($"Environment: {builder.Environment.EnvironmentName}");
+// Log database info
 logger.LogInformation($"Using connection string: {connectionStringName}");
+if (connectionString.Contains("Data Source="))
+{
+    var dbPath = connectionString.Split('=')[1].Split(';')[0];
+    logger.LogInformation($"Database path: {dbPath}");
+    
+    if (File.Exists(dbPath))
+    {
+        logger.LogInformation("Database file exists");
+    }
+    else
+    {
+        logger.LogWarning("Database file does not exist at the specified path");
+    }
+}
 
 // Register PositionRepository with SQLite
-builder.Services.AddScoped<IPositionRepository>(_ => new PositionRepository(connectionString));
+try
+{
+    builder.Services.AddScoped<IPositionRepository>(_ => 
+    {
+        var repo = new PositionRepository(connectionString);
+        logger.LogInformation("PositionRepository initialized successfully");
+        return repo;
+    });
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "Error initializing PositionRepository");
+    throw;
+}
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -54,7 +93,43 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Hikru Assessment API", Version = "v1" });
 });
 
+// Build the app
 var app = builder.Build();
+
+// Enable detailed error pages in development
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
+
+// Log the connection string being used for verification
+var productionConnectionString = builder.Configuration.GetConnectionString("SQLiteConnection_Production");
+if (!string.IsNullOrEmpty(productionConnectionString))
+{
+    logger.LogInformation("Production connection string is configured");
+    
+    // Verify database file exists and is accessible
+    if (productionConnectionString.Contains("Data Source="))
+    {
+        var dbPath = productionConnectionString.Split('=')[1].Split(';')[0];
+        logger.LogInformation($"Production database path: {dbPath}");
+        
+        if (File.Exists(dbPath))
+        {
+            var fileInfo = new FileInfo(dbPath);
+            logger.LogInformation($"Database file exists. Size: {fileInfo.Length} bytes. Last modified: {fileInfo.LastWriteTime}");
+        }
+        else
+        {
+            logger.LogWarning("Production database file does not exist at the specified path");
+        }
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
