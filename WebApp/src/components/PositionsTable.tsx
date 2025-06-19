@@ -328,7 +328,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
                       // Inline styles are now handled by the CSS class
                     }}
                   >
-                    Delete
+                    [Delete]
                   </button>
                 </td>
               </tr>
@@ -432,7 +432,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
                 onClick={handleAddConfirm}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : (editIndex !== null ? 'Update' : 'Add')}
+                {isSubmitting ? 'Saving...' : (editIndex !== null ? '[Update]' : 'Add')}
               </button>
               <button
                 style={{
@@ -445,7 +445,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
                 }}
                 onClick={handleAddCancel}
               >
-                Cancel
+                [Cancel]
               </button>
             </div>
             {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
