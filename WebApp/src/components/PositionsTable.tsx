@@ -246,6 +246,17 @@ const PositionTable: React.FC<PositionTableProps> = ({
 
   return (
     <div>
+      <div style={{ 
+        backgroundColor: '#f0f0f0', 
+        padding: '10px', 
+        marginBottom: '15px', 
+        borderRadius: '4px',
+        border: '1px solid #ddd'
+      }}>
+        <div><strong>Current Context:</strong></div>
+        <div>Recruiter ID: 1</div>
+        <div>Department ID: 1</div>
+      </div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
