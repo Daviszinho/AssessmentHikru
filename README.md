@@ -1,16 +1,89 @@
 # Hikru Assessment Application
 
 ## Overview
-This is a .NET 8.0 web application designed for Hikru's assessment process. The application includes a web interface and backend services built with modern .NET technologies.
+A comprehensive recruitment management system built with .NET 8.0 and React. The application provides functionality for managing job positions, recruiters, and departments with a modern web interface and robust backend services.
+This application is a part of the Hikru assessment process, it was created using .NET 8.0 and React, and it is ready to be deployed to Azure.
+Built using Windsurf AI, Visual Studio Community 2022, and GitHub.
+
+PROD AZURE URL: https://happy-stone-0deafcf10.1.azurestaticapps.net
+PROD AZURE API URL: http://hikru-recruitment-api.azurewebsites.net/api/positions
+
+
+Author: Davis Penaranda
+
+## Project Structure
+
+### Backend Components
+
+1. **Lib.Repository**
+   - Core domain models and interfaces
+   - Contains entity classes: `Position`, `Recruiter`, `Department`
+   - Defines the `IPositionRepository` interface for data access.
+   - Contains the PositionRepository.cs file for data access.
+   - Contains the Program.cs file for database connection and local initialization.
+
+2. **SQLiteConnectivity**
+   - Implements data access layer using SQLite
+   - Provides database context and repository implementations
+   - Handles database migrations and schema management
+   - Contains the InitializeDatabase.sql file for database initialization.
+   - Contains the PositionRepository.cs file for data access.
+   - Contains the Program.cs file for database connection and local initialization.
+
+3. **API.Test**
+   - Unit and integration tests for the application
+   - Uses xUnit testing framework
+   - Includes test cases for repository and service layers
+   - Dotnet clean, dotnet build and dotnet test commands.
+
+
+4. **RestWebServices**
+   - RESTful API endpoints for the application
+   - Implements controllers for positions, recruiters, and departments
+   - Handles request/response serialization and validation
+   - It can be run locally using dotnet run --project RestWebServices, from the solution root directory.
+
+5. **OracleConnectivity**
+   - Optional Oracle database connectivity layer
+   - Provides alternative data access implementation for Oracle databases
+   - Can be used for enterprise deployments requiring Oracle.
+   - INESTABLE, NOT RECOMMENDED FOR PRODUCTION.
+   - It was ready for testing locally and Oracle autonomous database.
+   -Multiple issues for deployment, then using SQL Lite now.
+
+### Frontend (WebApp)
+- Built with React and TypeScript
+- Modern, responsive UI with Material-UI components
+- Implements CRUD operations for positions
+- Real-time data updates
+- Form validation and error handling
+- Run locally using: dotnet clean, dotnet build, dotnet run 
 
 ## Features
-- Modern .NET 8.0 Web API
-- Automated CI/CD with GitHub Actions
-- Azure Web App deployment ready
-- Unit testing setup
+- **Position Management**
+  - Create, read, update, and delete job positions
+  - Track position status (draft, open, closed, archived)
+  - Associate positions with recruiters and departments
+
+- **User Interface**
+  - Interactive data tables with sorting and filtering
+  - Form validation and error handling
+  - Responsive design for desktop and mobile
+
+- **API**
+  - RESTful endpoints for all operations
+  - JSON-based request/response format
+  - Proper HTTP status codes and error handling
+
+- **Testing**
+  - Unit tests for business logic
+  - Integration tests for API endpoints
+  - Test coverage reporting
 
 ## Prerequisites
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Node.js](https://nodejs.org/) (v16+)
+- [SQLite](https://www.sqlite.org/index.html) (for local development)
 - [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) or [VS Code](https://code.visualstudio.com/)
 - [Git](https://git-scm.com/)
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (for deployment)
@@ -21,6 +94,51 @@ This is a .NET 8.0 web application designed for Hikru's assessment process. The 
 1. Clone the repository:
    ```bash
    git clone https://github.com/your-username/AssessmentHikru.git
+   cd AssessmentHikru
+
+2. Set up the database:
+   - SQLite database will be created automatically on first run
+   - For Oracle, update connection strings in appsettings.json
+
+3. Run the backend:
+   ```bash
+   cd RestWebServices
+   dotnet run
+   ```
+
+4. Run the frontend:
+   ```bash
+   cd ../WebApp
+   npm install
+   npm run dev
+   ```
+
+5. Access the application at `http://localhost:5173`
+
+## Testing
+Run unit tests:
+```bash
+cd API.Test
+dotnet test
+```
+
+## Deployment
+
+The application is configured for deployment to Azure Web Apps. Update the deployment settings in the GitHub Actions workflow file (`.github/workflows/deploy.yml`).
+
+## Configuration
+
+### Environment Variables
+- `ASPNETCORE_ENVIRONMENT`: Set to `Development`, `Staging`, or `Production`
+- `ConnectionStrings:DefaultConnection`: Database connection string
+- `ApiSettings:BaseUrl`: Base URL for API requests from the frontend
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
    cd AssessmentHikru
    ```
 
