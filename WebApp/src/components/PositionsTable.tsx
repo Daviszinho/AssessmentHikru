@@ -334,7 +334,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
               </tr>
               {expandedIndex === idx && (
                 <tr key={`expanded-${pos.id || `position-${idx}`}`}>
-                  <td colSpan={3} style={{ border: '1px solid #ccc', background: '#1a1a1a' }}>
+                  <td colSpan={3} style={{ border: '1px solid #ccc', background: '#c0c0c0', color: '#333' }}>
                     <div><strong>Location:</strong> {pos.location}</div>
                     <div><strong>Status:</strong> {pos.status}</div>
                     <div><strong>RecruiterId:</strong> {pos.recruiterId}</div>
