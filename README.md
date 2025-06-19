@@ -6,7 +6,7 @@ This application is a part of the Hikru assessment process, it was created using
 Built using Windsurf AI, Visual Studio Community 2022, and GitHub.
 
 PROD AZURE URL: https://happy-stone-0deafcf10.1.azurestaticapps.net
-PROD AZURE API URL: http://hikru-recruitment-api.azurewebsites.net/api/positions
+PROD AZURE API URL: https://hikrutestapp.azurewebsites.net/api/positions
 
 
 Author: Davis Penaranda
@@ -29,6 +29,7 @@ Author: Davis Penaranda
    - Contains the InitializeDatabase.sql file for database initialization.
    - Contains the PositionRepository.cs file for data access.
    - Contains the Program.cs file for database connection and local initialization.
+   - SQLite does not use stored procedures.
 
 3. **API.Test**
    - Unit and integration tests for the application
@@ -198,3 +199,6 @@ AssessmentHikru/
 ├── API.Test/            # Unit and integration tests
 └── README.md            # Project documentation
 ```
+
+
+
