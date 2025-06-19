@@ -5,7 +5,7 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
-const API_URL = 'https://hikrutestapp.azurewebsites.net/api/positions';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const App: React.FC = () => {
   // Refs for focus management
@@ -40,11 +40,10 @@ const App: React.FC = () => {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Origin': window.location.origin
+          'Pragma': 'no-cache'
         },
         mode: 'cors',
-        credentials: 'include',
+        credentials: 'same-origin',
         cache: 'no-store'
       });
       
