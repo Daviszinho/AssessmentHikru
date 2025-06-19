@@ -1,38 +1,42 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.8" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
-        <PackageReference Include="Moq" Version="4.18.3" />
-        <PackageReference Include="xunit" Version="2.4.1" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+        <PackageReference Include="Moq" Version="4.20.70" />
+        <PackageReference Include="xunit" Version="2.8.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="3.1.2">
+        <PackageReference Include="coverlet.collector" Version="6.0.0">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\API\API.csproj" />
-      <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
+        <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
+        <ProjectReference Include="..\SQLiteConnectivity\SQLiteConnectivity.csproj" />
     </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Files\*.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Files\*.csv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
 
 </Project>
