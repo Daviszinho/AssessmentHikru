@@ -206,3 +206,54 @@ textarea:focus,
 .delete-button:not(:disabled):active {
   transform: translateY(0);
 }
+
+/* Footer styles */
+.app-footer {
+  margin-top: 2rem;
+  padding: 1.5rem 0;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.footer-content p {
+  margin: 0.5rem 0;
+}
+
+.footer-content a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.footer-content a:hover,
+.footer-content a:focus {
+  color: var(--primary-hover);
+  text-decoration: underline;
+  outline: none;
+}
+
+.footer-content .api-link {
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 0.9em;
+  background-color: #f0f0f0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+.footer-content .github-icon {
+  font-size: 1.2em;
+  line-height: 1;
+}

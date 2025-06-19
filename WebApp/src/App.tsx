@@ -339,7 +339,27 @@ const App: React.FC = () => {
       
       <footer className="app-footer" role="contentinfo">
         <div className="footer-content">
-          <p>API Endpoint: <code>{API_URL}</code></p>
+          <p>
+            API Endpoint:{' '}
+            <a 
+              href={API_URL} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="api-link"
+            >
+              {API_URL}
+            </a>
+          </p>
+          <p>
+            <a 
+              href="https://github.com/daviszinho/AssessmentHikru" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="github-link"
+            >
+              <span className="github-icon" aria-hidden="true">📄</span> View on GitHub
+            </a>
+          </p>
         </div>
       </footer>
     </div>

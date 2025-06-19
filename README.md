@@ -124,7 +124,7 @@ dotnet test
 
 ## Deployment
 
-The application is configured for deployment to Azure Web Apps. Update the deployment settings in the GitHub Actions workflow file (`.github/workflows/deploy.yml`).
+The application is configured for deployment to Azure Web Apps. Update the deployment settings in the GitHdub Actions workflow file (`.github/workflows/deploy.yml`).
 
 ## Configuration
 
