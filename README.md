@@ -200,5 +200,8 @@ AssessmentHikru/
 └── README.md            # Project documentation
 ```
 
+Created with ❤️ and 🚀 by Davis Penaranda
+Please, hire me  :D
+
 
 
