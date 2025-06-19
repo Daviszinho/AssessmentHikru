@@ -43,7 +43,6 @@ const App: React.FC = () => {
           'Pragma': 'no-cache'
         },
         mode: 'cors',
-        credentials: 'same-origin',
         cache: 'no-store'
       });
       
