@@ -69,25 +69,33 @@ var configValues = builder.Configuration.AsEnumerable()
 
 logger.LogInformation("Configuration Values: " + string.Join(", ", configValues));
 
-// Add CORS policy
+// Add CORS policy with comprehensive settings
 builder.Services.AddCors(options =>
 {
+    // Default policy that will be applied to all endpoints
+    options.DefaultPolicyName = "AllowReactApp";
+    
+    // Policy for development - allows all origins (use with caution)
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-    
-    // For production, use this more restrictive policy
-    options.AddPolicy("AllowReactApp", policy =>
-    {
-        policy.WithOrigins(
-                "https://happy-stone-0deafcf10.1.azurestaticapps.net",
-                "http://localhost:3000")
+        policy.WithOrigins("https://happy-stone-0deafcf10.1.azurestaticapps.net",
+                         "http://localhost:3000")
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition")
+              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
+    });
+    
+    // Production policy - explicit origins only
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("https://happy-stone-0deafcf10.1.azurestaticapps.net")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition")
+              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
     });
 });
 
@@ -199,17 +207,39 @@ if (!string.IsNullOrEmpty(productionConnectionString))
     }
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Enable CORS with the configured policy
+app.UseCors("AllowReactApp");
 
-// Enable CORS - using AllowAll for troubleshooting
-app.UseCors("AllowAll"); // Switch to "AllowReactApp" after testing
+// Handle preflight requests
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        var origin = context.Request.Headers["Origin"].ToString();
+        if (!string.IsNullOrEmpty(origin) && 
+            (origin.Contains("happy-stone-0deafcf10.1.azurestaticapps.net") || 
+             origin.Contains("localhost:3000")))
+        {
+            context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
+            context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+            context.Response.Headers.Add("Access-Control-Max-Age", "86400");
+            context.Response.StatusCode = 204; // No Content
+            return;
+        }
+    }
+    await next();
+});
+
+app.UseHttpsRedirection();
 
 // Add error handling middleware
 app.Use(async (context, next) =>

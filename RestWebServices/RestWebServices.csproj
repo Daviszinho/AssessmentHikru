@@ -19,15 +19,4 @@
     <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
     <ProjectReference Include="..\SQLiteConnectivity\SQLiteConnectivity.csproj" />
   </ItemGroup>
-
-  <!-- Include database file in publish output -->
-  <ItemGroup>
-    <Content Include="db_hikru_test.db">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-      <TargetPath>App_Data\db_hikru_test.db</TargetPath>
-    </Content>
-    <Content Update="App_Data\**" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
