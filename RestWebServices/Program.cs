@@ -75,22 +75,13 @@ builder.Services.AddCors(options =>
     // Default policy that will be applied to all endpoints
     options.DefaultPolicyName = "AllowReactApp";
     
-    // Policy for development - allows all origins (use with caution)
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.WithOrigins("https://happy-stone-0deafcf10.1.azurestaticapps.net",
-                         "http://localhost:3000")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials()
-              .WithExposedHeaders("Content-Disposition")
-              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
-    });
-    
-    // Production policy - explicit origins only
+    // Single policy for all environments
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://happy-stone-0deafcf10.1.azurestaticapps.net")
+        policy.WithOrigins(
+                "https://happy-stone-0deafcf10.1.azurestaticapps.net",
+                "http://localhost:3000",
+                "http://localhost:5000")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials()
@@ -101,21 +92,6 @@ builder.Services.AddCors(options =>
 
 // Add services to the container.
 builder.Services.AddControllers();
-
-// Configure CORS to allow requests from the React frontend
-var reactAppUrl = builder.Configuration["ReactAppUrl"] ?? "http://localhost:3000";
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowReactApp",
-        policyBuilder =>
-        {
-            policyBuilder.WithOrigins(reactAppUrl)
-                       .AllowAnyHeader()
-                       .AllowAnyMethod()
-                       .AllowCredentials();
-        });
-});
 
 // Get the appropriate connection string based on environment
 var isProduction = environment.IsProduction();
