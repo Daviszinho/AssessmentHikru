@@ -3,9 +3,9 @@
   --primary-color: #646cff;
   --primary-hover: #535bf2;
   --error-color: #ff4444;
-  --success-color: #4caf50;
+  --success-color: hsl(122, 39%, 49%);
   --text-color: #213547;
-  --background-color: #ffffff;
+  --background-color: #808080;
   --focus-outline: 3px solid #4d90fe;
 }
 
