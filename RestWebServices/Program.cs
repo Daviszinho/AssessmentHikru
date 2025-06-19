@@ -36,7 +36,33 @@ logger.LogInformation($"Content Root: {environment.ContentRootPath}");
 logger.LogInformation($"Web Root: {environment.WebRootPath}");
 logger.LogInformation($"Application Name: {environment.ApplicationName}");
 
-// Log all configuration values
+// Handle App_Data directory and connection string
+var contentRoot = builder.Environment.ContentRootPath;
+var appDataPath = Path.Combine(contentRoot, "App_Data");
+
+// Create App_Data directory if it doesn't exist
+if (!Directory.Exists(appDataPath))
+{
+    Directory.CreateDirectory(appDataPath);
+    logger.LogInformation($"Created App_Data directory at: {appDataPath}");
+}
+
+// Process connection strings to replace {App_Data} token
+var connectionStrings = builder.Configuration.GetSection("ConnectionStrings").Get<Dictionary<string, string>>();
+if (connectionStrings != null)
+{
+    foreach (var key in connectionStrings.Keys.ToList())
+    {
+        if (!string.IsNullOrEmpty(connectionStrings[key]))
+        {
+            var newConnectionString = connectionStrings[key].Replace("{App_Data}", appDataPath + Path.DirectorySeparatorChar);
+            builder.Configuration.GetSection("ConnectionStrings")[key] = newConnectionString;
+            logger.LogInformation($"Updated connection string for {key}");
+        }
+    }
+}
+
+// Log all configuration values (after processing)
 var configValues = builder.Configuration.AsEnumerable()
     .Where(kvp => kvp.Value != null)
     .Select(kvp => $"{kvp.Key} = {kvp.Value}");

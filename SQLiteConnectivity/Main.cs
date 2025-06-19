@@ -28,7 +28,7 @@ public class Program
 
             // Create a connection to the SQLite database
             string connectionString = $"Data Source={DatabaseFileName}";
-            
+            //string connectionString ="Data Source=c:\\home\\data\\db_hikru_test.db";
             using (var connection = new SqliteConnection(connectionString))
             {
                 connection.Open();

@@ -2,6 +2,8 @@ using System.Data;
 using Microsoft.Data.Sqlite;
 using Lib.Repository.Entities;
 using Lib.Repository.Repository;
+using System.IO;
+using System.Linq;
 
 namespace SQLiteConnectivity.Repository
 {
@@ -17,17 +19,86 @@ namespace SQLiteConnectivity.Repository
 
         private SqliteConnection GetConnection()
         {
-            if (_connection == null)
+            try
             {
-                _connection = new SqliteConnection(_connectionString);
-                _connection.Open();
+                if (_connection == null)
+                {
+                    _connection = new SqliteConnection(_connectionString);
+                    _connection.Open();
+                    
+                    // Test if tables exist
+                    using (var command = new SqliteCommand("SELECT name FROM sqlite_master WHERE type='table' AND name='Position'", _connection))
+                    {
+                        var result = command.ExecuteScalar();
+                        if (result == null)
+                        {
+                            // Tables don't exist, run initialization
+                            InitializeDatabase();
+                        }
+                    }
+                }
+                else if (_connection.State != ConnectionState.Open)
+                {
+                    _connection.Open();
+                }
+
+                return _connection;
             }
-            else if (_connection.State != ConnectionState.Open)
+            catch (Exception ex)
             {
-                _connection.Open();
+                // If any error occurs, try to initialize the database
+                try
+                {
+                    InitializeDatabase();
+                    _connection = new SqliteConnection("Data Source=c:\\home\\data\\db_hikru_test.db");
+                    _connection.Open();
+                    return _connection;
+                }
+                catch (Exception initEx)
+                {
+                    throw new Exception($"Failed to initialize database: {initEx.Message}", ex);
+                }
+            }
+        }
+
+        private void InitializeDatabase()
+        {
+            var scriptPath = Path.Combine(Directory.GetCurrentDirectory(), "Scripts", "InitializeDatabase.sql");
+            if (!File.Exists(scriptPath))
+            {
+                throw new FileNotFoundException($"Database initialization script not found at: {scriptPath}");
             }
 
-            return _connection;
+            var script = File.ReadAllText(scriptPath);
+            
+            // Create a new connection to avoid transaction conflicts
+            using (var connection = new SqliteConnection(_connectionString))
+            {
+                connection.Open();
+                
+                // Split the script into commands and execute them
+                var commands = script.Split(';')
+                    .Where(cmd => !string.IsNullOrWhiteSpace(cmd))
+                    .Select(cmd => cmd.Trim())
+                    .Where(cmd => !cmd.StartsWith("PRAGMA") && !cmd.StartsWith("BEGIN") && !cmd.StartsWith("COMMIT"));
+                
+                // Execute each command individually
+                foreach (var commandText in commands)
+                {
+                    try
+                    {
+                        using (var command = new SqliteCommand(commandText, connection))
+                        {
+                            command.ExecuteNonQuery();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the error but continue with other commands
+                        Console.WriteLine($"Error executing command: {commandText}\n{ex.Message}");
+                    }
+                }
+            }
         }
 
         public async Task<IEnumerable<Position>> GetAllPositionsAsync()
