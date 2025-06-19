@@ -21,7 +21,27 @@ var logger = LoggerFactory.Create(config =>
     config.AddDebug();
 }).CreateLogger("ProgramStartup");
 
+// Log all environment variables (be careful with sensitive data in production)
+if (!environment.IsProduction())
+{
+    logger.LogInformation("Environment Variables:" + 
+        string.Join(Environment.NewLine, 
+            Environment.GetEnvironmentVariables()
+                .Cast<System.Collections.DictionaryEntry>()
+                .Select(e => $"{e.Key} = {e.Value}")));
+}
+
 logger.LogInformation($"Application starting in {environment.EnvironmentName} environment");
+logger.LogInformation($"Content Root: {environment.ContentRootPath}");
+logger.LogInformation($"Web Root: {environment.WebRootPath}");
+logger.LogInformation($"Application Name: {environment.ApplicationName}");
+
+// Log all configuration values
+var configValues = builder.Configuration.AsEnumerable()
+    .Where(kvp => kvp.Value != null)
+    .Select(kvp => $"{kvp.Key} = {kvp.Value}");
+
+logger.LogInformation("Configuration Values: " + string.Join(", ", configValues));
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -143,7 +163,30 @@ app.UseHttpsRedirection();
 // Enable CORS with the configured policy
 app.UseCors("AllowReactApp");
 
+// Add error handling middleware
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next(context);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Unhandled exception occurred");
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsJsonAsync(new 
+        { 
+            error = "An unexpected error occurred",
+            message = ex.Message,
+            details = environment.IsDevelopment() ? ex.StackTrace : null
+        });
+    }
+});
+
 app.UseAuthorization();
 app.MapControllers();
+
+// Log startup completion
+logger.LogInformation("Application startup complete");
 
 app.Run();

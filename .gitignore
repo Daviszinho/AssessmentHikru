@@ -155,3 +155,4 @@ RestWebServices/publish/runtimes/win-arm64/native/e_sqlite3.dll
 RestWebServices/publish/runtimes/win-x64/native/e_sqlite3.dll
 RestWebServices/publish/runtimes/win-x86/native/e_sqlite3.dll
 RestWebServices/Properties/PublishProfiles/HikruTestApp - Web Deploy.pubxml.user
+RestWebServices/Properties/PublishProfiles/HikruTestApp - Web Deploy.pubxml.user
