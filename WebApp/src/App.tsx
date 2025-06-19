@@ -5,7 +5,7 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
-const API_URL = 'http://localhost:5246/api/positions';
+const API_URL = 'https://hikrutestapp.azurewebsites.net/api/positions';
 
 const App: React.FC = () => {
   // Refs for focus management
