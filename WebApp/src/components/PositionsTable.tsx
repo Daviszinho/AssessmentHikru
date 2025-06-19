@@ -352,7 +352,7 @@ const PositionTable: React.FC<PositionTableProps> = ({
         {!showAddForm ? (
           <button onClick={handleAddClick}>[Add]</button>
         ) : (
-          <div style={{ background: '#222', padding: 16, borderRadius: 8, marginTop: 8 }}>
+          <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, marginTop: 8, color: '#333' }}>
             <div>
               <input
                 name="title"
