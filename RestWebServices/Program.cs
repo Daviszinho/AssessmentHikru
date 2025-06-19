@@ -69,6 +69,28 @@ var configValues = builder.Configuration.AsEnumerable()
 
 logger.LogInformation("Configuration Values: " + string.Join(", ", configValues));
 
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+    
+    // For production, use this more restrictive policy
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins(
+                "https://happy-stone-0deafcf10.1.azurestaticapps.net",
+                "http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 
@@ -186,8 +208,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Enable CORS with the configured policy
-app.UseCors("AllowReactApp");
+// Enable CORS - using AllowAll for troubleshooting
+app.UseCors("AllowAll"); // Switch to "AllowReactApp" after testing
 
 // Add error handling middleware
 app.Use(async (context, next) =>
