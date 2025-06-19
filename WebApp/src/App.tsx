@@ -34,16 +34,21 @@ const App: React.FC = () => {
     try {
       console.log('[App] Sending GET request to:', API_URL);
       const startTime = performance.now();
-      const response = await fetch(API_URL, {
+      // For production, we need to use a proxy to avoid CORS issues
+      const useProxy = !API_URL.includes('localhost') && !API_URL.includes('127.0.0.1');
+      const requestUrl = useProxy ? `https://cors-anywhere.herokuapp.com/${API_URL}` : API_URL;
+      
+      const response = await fetch(requestUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          ...(useProxy ? { 'X-Requested-With': 'XMLHttpRequest' } : {})
         },
         mode: 'cors',
-        credentials: 'same-origin',
+        credentials: useProxy ? 'omit' : 'same-origin',
         cache: 'no-store'
       });
       
