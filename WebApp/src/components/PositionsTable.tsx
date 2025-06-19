@@ -244,9 +244,67 @@ const PositionTable: React.FC<PositionTableProps> = ({
   // Debug log the positions data
   console.log('Positions data:', positions);
 
+  // Responsive styles
+  const responsiveStyles = {
+    container: {
+      width: '100%',
+      overflowX: 'auto',
+      WebkitOverflowScrolling: 'touch',
+      msOverflowStyle: '-ms-autohiding-scrollbar',
+    } as React.CSSProperties,
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      minWidth: '600px', // Ensure table has a minimum width
+    } as React.CSSProperties,
+    cell: {
+      padding: '12px 8px',
+      border: '1px solid #444',
+      wordBreak: 'break-word',
+    } as React.CSSProperties,
+    formGroup: {
+      marginBottom: '16px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '8px',
+    } as React.CSSProperties,
+    input: {
+      padding: '8px',
+      borderRadius: '4px',
+      border: '1px solid #555',
+      backgroundColor: '#333',
+      color: '#fff',
+      width: '100%',
+      boxSizing: 'border-box' as const,
+    } as React.CSSProperties,
+    button: {
+      padding: '8px 16px',
+      borderRadius: '4px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 'bold',
+      margin: '4px',
+      whiteSpace: 'nowrap',
+    } as React.CSSProperties,
+    buttonPrimary: {
+      backgroundColor: '#4CAF50',
+      color: 'white',
+    } as React.CSSProperties,
+    buttonDanger: {
+      backgroundColor: 'transparent',
+      border: '1px solid #f44336',
+      color: '#f44336',
+    } as React.CSSProperties,
+    buttonSecondary: {
+      backgroundColor: '#2196F3',
+      color: 'white',
+    } as React.CSSProperties,
+  };
+
   return (
-    <div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <div style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={responsiveStyles.container}>
+        <table style={responsiveStyles.table}>
         <thead>
           <tr>
             <th style={{ border: '1px solid #ccc' }}>Title</th>
@@ -418,35 +476,60 @@ const PositionTable: React.FC<PositionTableProps> = ({
                 onChange={handleInputChange}
                 style={{ marginRight: 8 }}
               />
-              <button
-                style={{
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  padding: '6px 16px',
-                  marginRight: 8,
-                  borderRadius: 4,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  opacity: isSubmitting ? 0.7 : 1
-                }}
-                onClick={handleAddConfirm}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saving...' : (editIndex !== null ? '[Update]' : 'Add')}
-              </button>
-              <button
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '1px solid #f44336',
-                  color: '#f44336',
-                  padding: '4px 12px',
-                  borderRadius: 4,
-                  cursor: 'pointer'
-                }}
-                onClick={handleAddCancel}
-              >
-                [Cancel]
-              </button>
+              <div style={{ 
+                gridColumn: '1 / -1', 
+                display: 'flex', 
+                flexWrap: 'wrap',
+                gap: '12px',
+                justifyContent: 'flex-end',
+                paddingTop: '8px',
+                borderTop: '1px solid #444',
+                marginTop: '8px'
+              }}>
+                <button
+                  style={{
+                    ...responsiveStyles.button,
+                    ...(isSubmitting ? {
+                      backgroundColor: '#666',
+                      cursor: 'not-allowed',
+                      opacity: 0.7
+                    } : responsiveStyles.buttonPrimary),
+                    minWidth: '120px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onClick={handleAddConfirm}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner" style={{
+                        display: 'inline-block',
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderRadius: '50%',
+                        borderTopColor: '#fff',
+                        animation: 'spin 1s ease-in-out infinite'
+                      }} />
+                      Saving...
+                    </>
+                  ) : editIndex !== null ? '[Update]' : '[Add]'}
+                </button>
+                <button
+                  style={{
+                    ...responsiveStyles.button,
+                    ...responsiveStyles.buttonDanger,
+                    minWidth: '100px'
+                  }}
+                  onClick={handleAddCancel}
+                  type="button"
+                >
+                  [Cancel]
+                </button>
+              </div>
             </div>
             {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
           </div>
