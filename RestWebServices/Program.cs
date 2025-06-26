@@ -91,12 +91,14 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",  // Vite default port
                 "http://localhost:4173",  // Vite preview port
                 "http://localhost:5246",  // Your local backend port
+                "http://localhost:53614", // React app port (Vite config)
                 "http://localhost:8080",  // Common dev port
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:5000",
                 "http://127.0.0.1:5173",
                 "http://127.0.0.1:4173",
                 "http://127.0.0.1:5246",  // Your local backend port
+                "http://127.0.0.1:53614", // React app port (Vite config)
                 "http://127.0.0.1:8080")
               .AllowAnyMethod()
               .AllowAnyHeader()
@@ -291,37 +293,41 @@ static async Task InitializeDatabaseAsync(string connectionString, ILogger logge
         // Extract database path from connection string
         var dbPath = connectionString.Split('=')[1].Split(';')[0];
         
-        // Create database file if it doesn't exist
+        // Solo si la base de datos NO existe, la creamos y ejecutamos el script
         if (!File.Exists(dbPath))
         {
             logger.LogInformation($"Creating database file: {dbPath}");
             File.Create(dbPath).Close();
-        }
 
-        // Find the SQL script file
-        var scriptPath = FindScriptFile();
-        if (string.IsNullOrEmpty(scriptPath))
-        {
-            logger.LogWarning("SQL initialization script not found. Database will be empty.");
-            return;
-        }
-
-        logger.LogInformation($"Reading SQL script from: {scriptPath}");
-        string sqlScript = await File.ReadAllTextAsync(scriptPath);
-        
-        using (var connection = new SqliteConnection(connectionString))
-        {
-            connection.Open();
-            logger.LogInformation("Executing database initialization script...");
-            
-            // Execute the entire script as one command
-            using (var command = connection.CreateCommand())
+            // Find the SQL script file
+            var scriptPath = FindScriptFile();
+            if (string.IsNullOrEmpty(scriptPath))
             {
-                command.CommandText = sqlScript;
-                await command.ExecuteNonQueryAsync();
+                logger.LogWarning("SQL initialization script not found. Database will be empty.");
+                return;
             }
+
+            logger.LogInformation($"Reading SQL script from: {scriptPath}");
+            string sqlScript = await File.ReadAllTextAsync(scriptPath);
             
-            logger.LogInformation("Database initialization completed successfully!");
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                logger.LogInformation("Executing database initialization script...");
+                
+                // Execute the entire script as one command
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = sqlScript;
+                    await command.ExecuteNonQueryAsync();
+                }
+                
+                logger.LogInformation("Database initialization completed successfully!");
+            }
+        }
+        else
+        {
+            logger.LogInformation("Database file already exists. Initialization script will NOT be run.");
         }
     }
     catch (Exception ex)

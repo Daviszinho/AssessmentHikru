@@ -36,7 +36,15 @@ namespace RestWebServices.Controllers
                 if (id.HasValue)
                 {
                     _logger.LogInformation($"{_timestamp} [INFO] Position created with ID: {id}");
-                    return CreatedAtAction(nameof(GetPosition), new { id }, new { id });
+                    // Obtener el objeto creado y retornarlo
+                    var queryRepo = HttpContext.RequestServices.GetService(typeof(Lib.Repository.Repository.Queries.IPositionQueryRepository)) as Lib.Repository.Repository.Queries.IPositionQueryRepository;
+                    if (queryRepo != null)
+                    {
+                        var createdPosition = await queryRepo.GetPositionByIdAsync(id.Value);
+                        return Ok(createdPosition);
+                    }
+                    // Fallback: retornar solo el id
+                    return Ok(new { id });
                 }
                 
                 _logger.LogError($"{_timestamp} [ERROR] Failed to create position");
@@ -66,7 +74,16 @@ namespace RestWebServices.Controllers
                 if (success)
                 {
                     _logger.LogInformation($"{_timestamp} [INFO] Position with ID {id} updated successfully");
-                    return NoContent();
+                    // Fetch the updated position from the query repository and return it
+                    // (We need to resolve the query repository here)
+                    var queryRepo = HttpContext.RequestServices.GetService(typeof(Lib.Repository.Repository.Queries.IPositionQueryRepository)) as Lib.Repository.Repository.Queries.IPositionQueryRepository;
+                    if (queryRepo != null)
+                    {
+                        var updatedPosition = await queryRepo.GetPositionByIdAsync(id);
+                        return Ok(updatedPosition);
+                    }
+                    // Fallback: return the input position if query repo is not available
+                    return Ok(position);
                 }
                 
                 _logger.LogWarning($"{_timestamp} [WARN] Position with ID {id} not found for update");

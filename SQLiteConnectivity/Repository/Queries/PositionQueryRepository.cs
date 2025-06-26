@@ -1,4 +1,3 @@
-
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Lib.Repository.Entities;
@@ -100,8 +99,6 @@ namespace SQLiteConnectivity.Repository.Queries
                 UpdatedAt = DateTime.Parse(reader.GetString(reader.GetOrdinal("UPDATEDAT"))),
                 // Asumiendo que IsActive no existe en la base de datos, lo establecemos como true por defecto
                 IsActive = true,
-                // Establecer Level como cadena vacía ya que no existe en la base de datos
-                Level = ""
             };
 
             return position;

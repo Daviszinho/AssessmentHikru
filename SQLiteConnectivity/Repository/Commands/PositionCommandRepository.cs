@@ -38,17 +38,20 @@ namespace SQLiteConnectivity.Repository.Commands
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"
-                    INSERT INTO Position (Title, DepartmentId, Level, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (@Title, @DepartmentId, @Level, @Description, @IsActive, @CreatedAt, @UpdatedAt);
+                    INSERT INTO Position (Title, DepartmentId, Description, Location, Status, RecruiterId, Budget, ClosingDate, CreatedAt, UpdatedAt)
+                    VALUES (@Title, @DepartmentId, @Description, @Location, @Status, @RecruiterId, @Budget, @ClosingDate, @CreatedAt, @UpdatedAt);
                     SELECT last_insert_rowid();";
 
                 command.Parameters.AddWithValue("@Title", position.Title);
                 command.Parameters.AddWithValue("@DepartmentId", position.DepartmentId);
-                command.Parameters.AddWithValue("@Level", position.Level);
-                command.Parameters.AddWithValue("@Description", position.Description is not null ? (object)position.Description : DBNull.Value);
-                command.Parameters.AddWithValue("@IsActive", position.IsActive);
-                command.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
-                command.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
+                command.Parameters.AddWithValue("@Description", position.Description ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Location", position.Location ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Status", position.Status ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@RecruiterId", position.RecruiterId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Budget", position.Budget ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@ClosingDate", position.ClosingDate ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@CreatedAt", position.CreatedAt);
+                command.Parameters.AddWithValue("@UpdatedAt", position.UpdatedAt);
 
                 var result = await command.ExecuteScalarAsync();
                 if (result != null && int.TryParse(result.ToString(), out int id))
@@ -69,18 +72,24 @@ namespace SQLiteConnectivity.Repository.Commands
                     UPDATE Position 
                     SET Title = @Title,
                         DepartmentId = @DepartmentId,
-                        Level = @Level,
                         Description = @Description,
-                        IsActive = @IsActive,
+                        Location = @Location,
+                        Status = @Status,
+                        RecruiterId = @RecruiterId,
+                        Budget = @Budget,
+                        ClosingDate = @ClosingDate,
                         UpdatedAt = @UpdatedAt
                     WHERE Id = @Id";
 
                 command.Parameters.AddWithValue("@Id", position.Id);
                 command.Parameters.AddWithValue("@Title", position.Title);
                 command.Parameters.AddWithValue("@DepartmentId", position.DepartmentId);
-                command.Parameters.AddWithValue("@Level", position.Level);
-                command.Parameters.AddWithValue("@Description", position.Description is not null ? (object)position.Description : DBNull.Value);
-                command.Parameters.AddWithValue("@IsActive", position.IsActive);
+                command.Parameters.AddWithValue("@Description", position.Description ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Location", position.Location ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Status", position.Status ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@RecruiterId", position.RecruiterId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Budget", position.Budget ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@ClosingDate", position.ClosingDate ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
 
                 int rowsAffected = await command.ExecuteNonQueryAsync();

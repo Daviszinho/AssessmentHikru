@@ -69,7 +69,7 @@ INSERT INTO [Position] ([TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],
 ('Product Manager','Lead product strategy and development for our core platform','Montevideo, Uruguay','Draft',1,1,1000,'2025-09-11',datetime('now'),datetime('now'));
 
 INSERT INTO [Position] ([TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES 
-('DevOps Engineer','Build and maintain our cloud infrastructure and CI/CD pipelines','Remote','Draft',1,1,0,'2025-06-20',datetime('now'),datetime('now'));
+('DevOps Engineer','Build and maintain our cloud infrastructure and CI/CD pipelines','Remote','Draft',1,1,10000,'2025-06-20',datetime('now'),datetime('now'));
 
 -- Create view for position details
 CREATE VIEW PositionDetails AS
