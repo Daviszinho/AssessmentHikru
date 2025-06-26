@@ -39,7 +39,10 @@ public class Program
             }
         }
 
-        return null;
+
+        // Throw an exception with all the paths that were checked
+        var searchedPaths = string.Join(Environment.NewLine, possiblePaths);
+        throw new FileNotFoundException($"Could not find script file '{ScriptFileName}'. Searched in the following locations:\n{searchedPaths}");
     }
 
     private static async Task InitializeDatabaseAsync(string connectionString)

@@ -45,8 +45,12 @@ namespace API.Test
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         Title TEXT NOT NULL,
                         DepartmentId INTEGER NOT NULL,
-                        Level TEXT NOT NULL,
                         Description TEXT,
+                        Location TEXT,
+                        Status TEXT,
+                        RecruiterId INTEGER,
+                        Budget DECIMAL,
+                        ClosingDate DATETIME,
                         IsActive BOOLEAN NOT NULL DEFAULT 1,
                         CreatedAt DATETIME NOT NULL,
                         UpdatedAt DATETIME NOT NULL
@@ -63,7 +67,6 @@ namespace API.Test
             {
                 Title = "Test Position",
                 DepartmentId = 1,
-                Level = "Mid",
                 Description = "Test Description",
                 IsActive = true
             };
@@ -84,7 +87,6 @@ namespace API.Test
             {
                 Title = "Test Get Position",
                 DepartmentId = 1,
-                Level = "Senior",
                 Description = "Test Get Description",
                 IsActive = true
             };
@@ -99,7 +101,7 @@ namespace API.Test
             Assert.NotNull(result);
             Assert.Equal(position.Title, result.Title);
             Assert.Equal(position.Description, result.Description);
-            Assert.Equal(position.Level, result.Level);
+
         }
 
         [Fact]
@@ -110,7 +112,7 @@ namespace API.Test
             {
                 Title = "Original Title",
                 DepartmentId = 1,
-                Level = "Junior",
+
                 IsActive = true
             };
             
@@ -123,7 +125,6 @@ namespace API.Test
                 Id = positionId.Value,
                 Title = "Updated Title",
                 DepartmentId = 1,
-                Level = "Mid",
                 Description = "Updated Description",
                 IsActive = true
             };
@@ -137,7 +138,7 @@ namespace API.Test
             Assert.NotNull(result);
             Assert.Equal(updatedPosition.Title, result.Title);
             Assert.Equal(updatedPosition.Description, result.Description);
-            Assert.Equal(updatedPosition.Level, result.Level);
+
         }
 
         [Fact]
@@ -148,7 +149,6 @@ namespace API.Test
             {
                 Title = "Position to Remove",
                 DepartmentId = 1,
-                Level = "Senior",
                 IsActive = true
             };
             
@@ -175,7 +175,7 @@ namespace API.Test
                 {
                     Title = $"Position {i}",
                     DepartmentId = i + 1,
-                    Level = i % 2 == 0 ? "Junior" : "Senior",
+
                     IsActive = true
                 });
             }
