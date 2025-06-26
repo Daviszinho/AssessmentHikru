@@ -4,7 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
         <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     </PropertyGroup>
 
@@ -15,7 +15,11 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
-      <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.8" />
+      <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="**/*.cs" Exclude="bin\**;obj\**;$(BaseIntermediateOutputPath)/**;$(BaseOutputPath)/**;@(Compile)" />
     </ItemGroup>
 
 </Project>
