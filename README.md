@@ -155,7 +155,7 @@ The application is configured for deployment to Azure Web Apps. Update the deplo
 
 4. Run the application:
    ```bash
-   dotnet run --project WebApp
+   npm run dev
    ```
    The application will be available at `https://localhost:53614`
 
