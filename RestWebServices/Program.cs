@@ -301,7 +301,7 @@ static async Task InitializeDatabaseAsync(string connectionString, ILogger logge
 
             // Find the SQL script file
             var scriptPath = FindScriptFile();
-            if (string.IsNullOrEmpty(scriptPath))
+            if (scriptPath == null)
             {
                 logger.LogWarning("SQL initialization script not found. Database will be empty.");
                 return;
@@ -338,7 +338,7 @@ static async Task InitializeDatabaseAsync(string connectionString, ILogger logge
 }
 
 // Helper method to find the SQL script file
-static string FindScriptFile()
+static string? FindScriptFile()
 {
     var scriptFileName = "InitializeDatabase.sql";
     

@@ -16,15 +16,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
-    <ProjectReference Include="..\SQLiteConnectivity\SQLiteConnectivity.csproj" />
+    <None Include="..\SQLiteConnectivity\Scripts\InitializeDatabase.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\SQLiteConnectivity\Scripts\InitializeDatabase.sql">
-      <Link>Scripts\InitializeDatabase.sql</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\SQLiteConnectivity\SQLiteConnectivity.csproj" />
+    <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
   </ItemGroup>
 
 </Project>
