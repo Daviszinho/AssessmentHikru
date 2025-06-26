@@ -43,28 +43,27 @@ namespace OracleConnectivity.Repository.Commands
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
-                    INSERT INTO Position (Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (:title, :departmentId, :description, :isActive, :createdAt, :updatedAt)
-                    RETURNING Id INTO :id";
+                    INSERT INTO Position (TITLE, DEPARTMENT_ID, DESCRIPTION, LOCATION, STATUS, RECRUITER_ID, BUDGET, CLOSING_DATE, IS_ACTIVE, CREATED_AT, UPDATED_AT)
+                    VALUES (:title, :departmentId, :description, :location, :status, :recruiterId, :budget, :closingDate, :isActive, :createdAt, :updatedAt)
+                    RETURNING ID INTO :id";
 
                 command.Parameters.Add("title", OracleDbType.Varchar2).Value = position.Title;
                 command.Parameters.Add("departmentId", OracleDbType.Int32).Value = position.DepartmentId;
                 command.Parameters.Add("description", OracleDbType.Varchar2).Value = position.Description is not null ? (object)position.Description : DBNull.Value;
+                command.Parameters.Add("location", OracleDbType.Varchar2).Value = position.Location is not null ? (object)position.Location : DBNull.Value;
+                command.Parameters.Add("status", OracleDbType.Varchar2).Value = position.Status is not null ? (object)position.Status : DBNull.Value;
+                command.Parameters.Add("recruiterId", OracleDbType.Int32).Value = position.RecruiterId.HasValue ? (object)position.RecruiterId.Value : DBNull.Value;
+                command.Parameters.Add("budget", OracleDbType.Decimal).Value = position.Budget.HasValue ? (object)position.Budget.Value : DBNull.Value;
+                command.Parameters.Add("closingDate", OracleDbType.Date).Value = position.ClosingDate.HasValue ? (object)position.ClosingDate.Value : DBNull.Value;
                 command.Parameters.Add("isActive", OracleDbType.Byte).Value = position.IsActive ? 1 : 0;
                 command.Parameters.Add("createdAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;
                 command.Parameters.Add("updatedAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;
                 
-                // For Oracle, we'll use a sequence or RETURNING clause
-                command.CommandText = @"
-                    INSERT INTO Position (Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (:title, :departmentId, :description, :isActive, :createdAt, :updatedAt)
-                    RETURNING Id INTO :id";
-
                 // For Oracle, we'll use a sequence to get the next ID
                 command.CommandText = @"
-                    INSERT INTO Position (Id, Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (POSITION_SEQ.NEXTVAL, :title, :departmentId, :description, :isActive, :createdAt, :updatedAt)
-                    RETURNING Id INTO :newId";
+                    INSERT INTO Position (ID, TITLE, DEPARTMENT_ID, DESCRIPTION, LOCATION, STATUS, RECRUITER_ID, BUDGET, CLOSING_DATE, IS_ACTIVE, CREATED_AT, UPDATED_AT)
+                    VALUES (POSITION_SEQ.NEXTVAL, :title, :departmentId, :description, :location, :status, :recruiterId, :budget, :closingDate, :isActive, :createdAt, :updatedAt)
+                    RETURNING ID INTO :newId";
 
                 var idParam = new OracleParameter("newId", OracleDbType.Decimal, ParameterDirection.Output);
                 command.Parameters.Add(idParam);
@@ -74,7 +73,18 @@ namespace OracleConnectivity.Repository.Commands
                 // Get the ID from the output parameter
                 if (idParam.Value != DBNull.Value && idParam.Value != null)
                 {
-                    return Convert.ToInt32(Convert.ToDecimal(idParam.Value));
+                    if (idParam.Value is OracleDecimal oracleDecimal)
+                    {
+                        return oracleDecimal.ToInt32();
+                    }
+                    else if (idParam.Value is decimal decimalValue)
+                    {
+                        return Convert.ToInt32(decimalValue);
+                    }
+                    else
+                    {
+                        return Convert.ToInt32(idParam.Value);
+                    }
                 }
                 return null;
             }
@@ -103,17 +113,29 @@ namespace OracleConnectivity.Repository.Commands
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
                     UPDATE Position 
-                    SET Title = :title, 
-                        DepartmentId = :departmentId, 
-                        Description = :description, 
-                        IsActive = :isActive,
-                        UpdatedAt = :updatedAt
-                    WHERE Id = :id";
+                    SET TITLE = :title, 
+                        DEPARTMENT_ID = :departmentId, 
+                        DESCRIPTION = :description,
+                        LOCATION = :location,
+                        STATUS = :status,
+                        RECRUITER_ID = :recruiterId,
+                        BUDGET = :budget,
+                        CLOSING_DATE = :closingDate,
+                        IS_ACTIVE = :isActive,
+                        CREATED_AT = :createdAt,
+                        UPDATED_AT = :updatedAt
+                    WHERE ID = :id";
 
                 command.Parameters.Add("title", OracleDbType.Varchar2).Value = position.Title;
                 command.Parameters.Add("departmentId", OracleDbType.Int32).Value = position.DepartmentId;
                 command.Parameters.Add("description", OracleDbType.Varchar2).Value = (object?)position.Description ?? DBNull.Value;
+                command.Parameters.Add("location", OracleDbType.Varchar2).Value = (object?)position.Location ?? DBNull.Value;
+                command.Parameters.Add("status", OracleDbType.Varchar2).Value = (object?)position.Status ?? DBNull.Value;
+                command.Parameters.Add("recruiterId", OracleDbType.Int32).Value = position.RecruiterId.HasValue ? (object)position.RecruiterId.Value : DBNull.Value;
+                command.Parameters.Add("budget", OracleDbType.Decimal).Value = position.Budget.HasValue ? (object)position.Budget.Value : DBNull.Value;
+                command.Parameters.Add("closingDate", OracleDbType.Date).Value = position.ClosingDate.HasValue ? (object)position.ClosingDate.Value : DBNull.Value;
                 command.Parameters.Add("isActive", OracleDbType.Byte).Value = position.IsActive ? 1 : 0;
+                command.Parameters.Add("createdAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;
                 command.Parameters.Add("updatedAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;
                 command.Parameters.Add("id", OracleDbType.Int32).Value = position.Id;
 
@@ -139,7 +161,7 @@ namespace OracleConnectivity.Repository.Commands
             {
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
-                command.CommandText = "DELETE FROM Position WHERE Id = :id";
+                command.CommandText = "DELETE FROM Position WHERE ID = :id";
                 command.Parameters.Add("id", OracleDbType.Int32).Value = id;
 
                 int rowsAffected = await command.ExecuteNonQueryAsync();

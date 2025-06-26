@@ -13,6 +13,26 @@ interface PositionRowProps {
   onDelete: (id: string, title: string) => Promise<void>;
 }
 
+// Utility function to format dates
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    
+    // Format as DD/MM/YYYY
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch (error) {
+    console.warn('Error formatting date:', dateString, error);
+    return '-';
+  }
+};
+
 const PositionRow: React.FC<PositionRowProps> = React.memo(({
   position,
   index,
@@ -102,7 +122,7 @@ const PositionRow: React.FC<PositionRowProps> = React.memo(({
             <div><strong>RecruiterId:</strong> {position.recruiterId}</div>
             <div><strong>DepartmentId:</strong> {position.departmentId}</div>
             <div><strong>Budget:</strong> {position.budget}</div>
-            <div><strong>Closing date:</strong> {position.closingDate || '-'}</div>
+            <div><strong>Closing date:</strong> {formatDate(position.closingDate)}</div>
           </td>
         </tr>
       )}

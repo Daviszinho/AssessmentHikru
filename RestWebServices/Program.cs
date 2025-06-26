@@ -70,37 +70,49 @@ logger.LogInformation("Connection strings processed");
 var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SQLite";
 logger.LogInformation($"DatabaseProvider from config: {databaseProvider}");
 
-// Get the appropriate connection string based on environment
-var isProduction = environment.IsProduction();
-var connectionStringName = isProduction ? "SQLiteConnection_Production" : "SQLiteConnection_Development";
-var connectionString = builder.Configuration.GetConnectionString(connectionStringName);
-
-if (string.IsNullOrEmpty(connectionString))
+// Get the appropriate connection string based on environment and provider
+string connectionString;
+if (databaseProvider.Equals("Oracle", StringComparison.OrdinalIgnoreCase))
 {
-    var errorMessage = $"SQLite connection string '{connectionStringName}' is not configured.";
-    logger.LogError(errorMessage);
-    throw new InvalidOperationException(errorMessage);
+    connectionString = builder.Configuration.GetConnectionString("OracleConnection");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        var errorMessage = $"Oracle connection string 'OracleConnection' is not configured.";
+        logger.LogError(errorMessage);
+        throw new InvalidOperationException(errorMessage);
+    }
+    logger.LogInformation($"Using Oracle connection string.");
+}
+else
+{
+    var isProduction = environment.IsProduction();
+    var connectionStringName = isProduction ? "SQLiteConnection_Production" : "SQLiteConnection_Development";
+    connectionString = builder.Configuration.GetConnectionString(connectionStringName);
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        var errorMessage = $"SQLite connection string '{connectionStringName}' is not configured.";
+        logger.LogError(errorMessage);
+        throw new InvalidOperationException(errorMessage);
+    }
+    logger.LogInformation($"Using SQLite connection string: {connectionStringName}");
+    // Log database info
+    if (connectionString.Contains("Data Source="))
+    {
+        var dbPath = connectionString.Split('=')[1].Split(';')[0];
+        logger.LogInformation($"Database path: {dbPath}");
+        if (File.Exists(dbPath))
+        {
+            logger.LogInformation("Database file exists");
+        }
+        else
+        {
+            logger.LogWarning("Database file does not exist at the specified path");
+        }
+    }
+    // Initialize database with tables and sample data
+    await InitializeDatabaseAsync(connectionString, logger);
 }
 
-// Log database info
-logger.LogInformation($"Using connection string: {connectionStringName}");
-if (connectionString.Contains("Data Source="))
-{
-    var dbPath = connectionString.Split('=')[1].Split(';')[0];
-    logger.LogInformation($"Database path: {dbPath}");
-    
-    if (File.Exists(dbPath))
-    {
-        logger.LogInformation("Database file exists");
-    }
-    else
-    {
-        logger.LogWarning("Database file does not exist at the specified path");
-    }
-}
-
-// Initialize database with tables and sample data
-await InitializeDatabaseAsync(connectionString, logger);
 
 // Register CQRS Repositories
 try
@@ -153,6 +165,28 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Hikru Assessment API", Version = "v1" });
 });
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:53614",  // React dev server
+                "http://localhost:3000",   // Alternative React port
+                "http://localhost:5173",   // Vite default port
+                "http://127.0.0.1:53614",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:5173"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
+builder.Services.AddControllers();
+builder.Services.AddAuthorization();
+
 // Build the app
 var app = builder.Build();
 
@@ -168,7 +202,7 @@ else
 }
 
 // Log the connection string being used for verification
-/*var productionConnectionString = builder.Configuration.GetConnectionString("SQLiteConnection_Production");
+var productionConnectionString = builder.Configuration.GetConnectionString("SQLiteConnection_Production");
 if (!string.IsNullOrEmpty(productionConnectionString))
 {
     logger.LogInformation("Production connection string is configured");
@@ -189,7 +223,7 @@ if (!string.IsNullOrEmpty(productionConnectionString))
             logger.LogWarning("Production database file does not exist at the specified path");
         }
     }
-}*/
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -41,7 +41,7 @@ namespace OracleConnectivity.Repository.Queries
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
-                    SELECT Id, Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt
+                    SELECT ID, TITLE, DEPARTMENT_ID, DESCRIPTION, LOCATION, STATUS, RECRUITER_ID, BUDGET, CLOSING_DATE, IS_ACTIVE, CREATED_AT, UPDATED_AT
                     FROM Position";
 
                 using var dbReader = await command.ExecuteReaderAsync();
@@ -77,9 +77,9 @@ namespace OracleConnectivity.Repository.Queries
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
-                    SELECT Id, Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt
+                    SELECT ID, TITLE, DEPARTMENT_ID, DESCRIPTION, LOCATION, STATUS, RECRUITER_ID, BUDGET, CLOSING_DATE, IS_ACTIVE, CREATED_AT, UPDATED_AT
                     FROM Position
-                    WHERE Id = :id";
+                    WHERE ID = :id";
                 command.Parameters.Add("id", OracleDbType.Int32).Value = id;
 
                 using var dbReader = await command.ExecuteReaderAsync();
@@ -108,15 +108,30 @@ namespace OracleConnectivity.Repository.Queries
         {
             return new Position
             {
-                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                Title = reader.GetString(reader.GetOrdinal("Title")),
-                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                Description = !reader.IsDBNull(reader.GetOrdinal("Description")) 
-                    ? reader.GetString(reader.GetOrdinal("Description")) 
+                Id = reader.GetInt32(reader.GetOrdinal("ID")),
+                Title = reader.GetString(reader.GetOrdinal("TITLE")),
+                DepartmentId = reader.GetInt32(reader.GetOrdinal("DEPARTMENT_ID")),
+                Description = !reader.IsDBNull(reader.GetOrdinal("DESCRIPTION")) 
+                    ? reader.GetString(reader.GetOrdinal("DESCRIPTION")) 
                     : null,
-                IsActive = reader.GetInt32(reader.GetOrdinal("IsActive")) == 1,
-                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
+                Location = !reader.IsDBNull(reader.GetOrdinal("LOCATION")) 
+                    ? reader.GetString(reader.GetOrdinal("LOCATION")) 
+                    : null,
+                Status = !reader.IsDBNull(reader.GetOrdinal("STATUS")) 
+                    ? reader.GetString(reader.GetOrdinal("STATUS")) 
+                    : null,
+                RecruiterId = !reader.IsDBNull(reader.GetOrdinal("RECRUITER_ID")) 
+                    ? reader.GetInt32(reader.GetOrdinal("RECRUITER_ID")) 
+                    : null,
+                Budget = !reader.IsDBNull(reader.GetOrdinal("BUDGET")) 
+                    ? reader.GetDecimal(reader.GetOrdinal("BUDGET")) 
+                    : null,
+                ClosingDate = !reader.IsDBNull(reader.GetOrdinal("CLOSING_DATE")) 
+                    ? reader.GetDateTime(reader.GetOrdinal("CLOSING_DATE")) 
+                    : null,
+                IsActive = reader.GetInt32(reader.GetOrdinal("IS_ACTIVE")) == 1,
+                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CREATED_AT")),
+                UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UPDATED_AT"))
             };
         }
 
