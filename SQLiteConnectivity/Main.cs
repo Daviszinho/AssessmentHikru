@@ -9,11 +9,77 @@ using SQLiteConnectivity.Repository.Queries;
 public class Program
 {
     private const string DatabaseFileName = "db_hikru_test.db";
+    private const string ScriptFileName = "InitializeDatabase.sql";
 
     private static string Truncate(string value, int maxLength)
     {
         if (string.IsNullOrEmpty(value)) return value;
         return value.Length <= maxLength ? value : value.Substring(0, maxLength - 3) + "...";
+    }
+
+    private static string FindScriptFile()
+    {
+        // Try multiple possible locations for the script file
+        var possiblePaths = new[]
+        {
+            ScriptFileName, // Current directory
+            Path.Combine("Scripts", ScriptFileName), // Scripts subdirectory
+            Path.Combine(Directory.GetCurrentDirectory(), ScriptFileName), // Full path in current directory
+            Path.Combine(Directory.GetCurrentDirectory(), "Scripts", ScriptFileName), // Full path in Scripts subdirectory
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ScriptFileName), // Output directory
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", ScriptFileName) // Output directory Scripts subdirectory
+        };
+
+        foreach (var path in possiblePaths)
+        {
+            if (File.Exists(path))
+            {
+                Console.WriteLine($"Found script file at: {path}");
+                return path;
+            }
+        }
+
+        return null;
+    }
+
+    private static async Task InitializeDatabaseAsync(string connectionString)
+    {
+        try
+        {
+            // Find the script file
+            string scriptPath = FindScriptFile();
+            if (string.IsNullOrEmpty(scriptPath))
+            {
+                Console.WriteLine($"Warning: SQL script file not found. Searched in:");
+                Console.WriteLine($"  - Current directory: {Directory.GetCurrentDirectory()}");
+                Console.WriteLine($"  - Base directory: {AppDomain.CurrentDomain.BaseDirectory}");
+                Console.WriteLine($"  - Scripts subdirectory");
+                return;
+            }
+
+            Console.WriteLine($"Reading SQL script from: {scriptPath}");
+            string sqlScript = await File.ReadAllTextAsync(scriptPath);
+            
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                Console.WriteLine("Executing database initialization script...");
+                
+                // Execute the entire script as one command
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = sqlScript;
+                    await command.ExecuteNonQueryAsync();
+                }
+                
+                Console.WriteLine("Database initialization completed successfully!");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing database: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
     }
 
     public static async Task Main(string[] args)
@@ -29,6 +95,9 @@ public class Program
 
             // Create a connection to the SQLite database
             string connectionString = $"Data Source={DatabaseFileName}";
+
+            // Initialize the database with tables and sample data
+            await InitializeDatabaseAsync(connectionString);
 
             using (var connection = new SqliteConnection(connectionString))
             {

@@ -32,6 +32,7 @@ namespace RestWebServices.Controllers
             try
             {
                 _logger.LogInformation($"{_timestamp} [INFO] Getting all positions");
+                //_logger.LogInformation("$[INFO] Getting all positions" + _queryRepository.GetConnectionString());
                 var positions = await _queryRepository.GetAllPositionsAsync();
                 _logger.LogInformation($"{_timestamp} [INFO] Retrieved {positions?.Count()} positions");
                 return Ok(positions);

@@ -5,6 +5,7 @@ using SQLiteConnectivity.Repository;
 using Lib.Repository.Repository;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,18 +58,23 @@ if (connectionStrings != null)
         {
             var newConnectionString = connectionStrings[key].Replace("{App_Data}", appDataPath + Path.DirectorySeparatorChar);
             builder.Configuration.GetSection("ConnectionStrings")[key] = newConnectionString;
-            logger.LogInformation($"Updated connection string for {key}");
+            //logger.LogInformation($"Updated connection string for {key}");
+
+            logger.LogInformation($"New connection string for {key}: {newConnectionString}");
         }
     }
 }
+logger.LogInformation("Connection strings processed");
+
+
 
 // Log all configuration values (after processing)
-var configValues = builder.Configuration.AsEnumerable()
+/*var configValues = builder.Configuration.AsEnumerable()
     .Where(kvp => kvp.Value != null)
     .Select(kvp => $"{kvp.Key} = {kvp.Value}");
 
 logger.LogInformation("Configuration Values: " + string.Join(", ", configValues));
-
+*/
 // Add CORS policy with comprehensive settings
 builder.Services.AddCors(options =>
 {
@@ -132,9 +138,14 @@ if (connectionString.Contains("Data Source="))
     }
 }
 
+// Initialize database with tables and sample data
+await InitializeDatabaseAsync(connectionString, logger);
+
 // Register CQRS Repositories
 try
 {
+    logger.LogInformation("Registering Command Repository");
+    logger.LogInformation("Connection string: " + connectionString);
     // Register Command Repository
     builder.Services.AddScoped<Lib.Repository.Repository.Commands.IPositionCommandRepository>(_ => 
     {
@@ -179,7 +190,7 @@ else
 }
 
 // Log the connection string being used for verification
-var productionConnectionString = builder.Configuration.GetConnectionString("SQLiteConnection_Production");
+/*var productionConnectionString = builder.Configuration.GetConnectionString("SQLiteConnection_Production");
 if (!string.IsNullOrEmpty(productionConnectionString))
 {
     logger.LogInformation("Production connection string is configured");
@@ -200,7 +211,7 @@ if (!string.IsNullOrEmpty(productionConnectionString))
             logger.LogWarning("Production database file does not exist at the specified path");
         }
     }
-}
+}*/
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -271,3 +282,80 @@ app.MapControllers();
 logger.LogInformation("Application startup complete");
 
 app.Run();
+
+// Database initialization method
+static async Task InitializeDatabaseAsync(string connectionString, ILogger logger)
+{
+    try
+    {
+        // Extract database path from connection string
+        var dbPath = connectionString.Split('=')[1].Split(';')[0];
+        
+        // Create database file if it doesn't exist
+        if (!File.Exists(dbPath))
+        {
+            logger.LogInformation($"Creating database file: {dbPath}");
+            File.Create(dbPath).Close();
+        }
+
+        // Find the SQL script file
+        var scriptPath = FindScriptFile();
+        if (string.IsNullOrEmpty(scriptPath))
+        {
+            logger.LogWarning("SQL initialization script not found. Database will be empty.");
+            return;
+        }
+
+        logger.LogInformation($"Reading SQL script from: {scriptPath}");
+        string sqlScript = await File.ReadAllTextAsync(scriptPath);
+        
+        using (var connection = new SqliteConnection(connectionString))
+        {
+            connection.Open();
+            logger.LogInformation("Executing database initialization script...");
+            
+            // Execute the entire script as one command
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sqlScript;
+                await command.ExecuteNonQueryAsync();
+            }
+            
+            logger.LogInformation("Database initialization completed successfully!");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error initializing database");
+        throw;
+    }
+}
+
+// Helper method to find the SQL script file
+static string FindScriptFile()
+{
+    var scriptFileName = "InitializeDatabase.sql";
+    
+    // Try multiple possible locations for the script file
+    var possiblePaths = new[]
+    {
+        scriptFileName, // Current directory
+        Path.Combine("Scripts", scriptFileName), // Scripts subdirectory
+        Path.Combine(Directory.GetCurrentDirectory(), scriptFileName), // Full path in current directory
+        Path.Combine(Directory.GetCurrentDirectory(), "Scripts", scriptFileName), // Full path in Scripts subdirectory
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, scriptFileName), // Output directory
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", scriptFileName), // Output directory Scripts subdirectory
+        Path.Combine("..", "SQLiteConnectivity", "Scripts", scriptFileName), // Relative to SQLiteConnectivity project
+        Path.Combine("..", "..", "SQLiteConnectivity", "Scripts", scriptFileName) // Two levels up
+    };
+
+    foreach (var path in possiblePaths)
+    {
+        if (File.Exists(path))
+        {
+            return path;
+        }
+    }
+
+    return null;
+}

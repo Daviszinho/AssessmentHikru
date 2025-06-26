@@ -37,7 +37,9 @@ namespace SQLiteConnectivity.Repository.Queries
         public async Task<IEnumerable<Position>> GetAllPositionsAsync()
         {
             var positions = new List<Position>();
-            
+            Console.WriteLine("Dentro de PositionQueryRepository, Connection string: " + _connectionString);
+
+
             using (var connection = GetConnection())
             using (var command = connection.CreateCommand())
             {

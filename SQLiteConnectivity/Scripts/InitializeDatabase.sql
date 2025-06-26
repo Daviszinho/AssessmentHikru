@@ -11,73 +11,85 @@
 -- Position: -1 row(s)
 -- Recruiter: -1 row(s)
 
-SELECT 1;
-PRAGMA foreign_keys=OFF;
+-- Enable foreign key constraints
+PRAGMA foreign_keys=ON;
+
+
+
+-- Drop existing tables if they exist
+DROP VIEW IF EXISTS PositionDetails;
+DROP TABLE IF EXISTS Position;
+DROP TABLE IF EXISTS Department;
+DROP TABLE IF EXISTS Recruiter;
+
 BEGIN TRANSACTION;
+
 CREATE TABLE [Recruiter] (
-  [ID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
-, [NAME] text NOT NULL
+  [ID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  [NAME] TEXT NOT NULL
 );
+
 CREATE TABLE [Department] (
-  [ID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
-, [NAME] text NOT NULL
+  [ID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  [NAME] TEXT NOT NULL
 );
+
 CREATE TABLE [Position] (
-  [ID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
-, [TITLE] text NOT NULL
-, [DESCRIPTION] text NOT NULL
-, [LOCATION] text NOT NULL
-, [STATUS] text NOT NULL
-, [RECRUITERID] bigint NOT NULL
-, [DEPARTMENTID] bigint NOT NULL
-, [BUDGET] real NULL
-, [CLOSINGDATE] text NULL
-, [CREATEDAT] text DEFAULT (CURRENT_TIMESTAMP) NULL
-, [UPDATEDAT] text DEFAULT (CURRENT_TIMESTAMP) NULL
-, CONSTRAINT [FK_Position_0_0] FOREIGN KEY ([DEPARTMENTID]) REFERENCES [Department] ([ID]) ON DELETE CASCADE ON UPDATE NO ACTION
-, CONSTRAINT [FK_Position_1_0] FOREIGN KEY ([RECRUITERID]) REFERENCES [Recruiter] ([ID]) ON DELETE CASCADE ON UPDATE NO ACTION
+  [ID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  [TITLE] TEXT NOT NULL,
+  [DESCRIPTION] TEXT NOT NULL,
+  [LOCATION] TEXT NOT NULL,
+  [STATUS] TEXT NOT NULL,
+  [RECRUITERID] INTEGER NOT NULL,
+  [DEPARTMENTID] INTEGER NOT NULL,
+  [BUDGET] REAL NULL,
+  [CLOSINGDATE] TEXT NULL,
+  [CREATEDAT] TEXT DEFAULT (datetime('now')) NULL,
+  [UPDATEDAT] TEXT DEFAULT (datetime('now')) NULL,
+  FOREIGN KEY ([DEPARTMENTID]) REFERENCES [Department] ([ID]) ON DELETE CASCADE,
+  FOREIGN KEY ([RECRUITERID]) REFERENCES [Recruiter] ([ID]) ON DELETE CASCADE
 );
-INSERT INTO [Recruiter] ([ID],[NAME]) VALUES (
-1,'Ana');
-INSERT INTO [Recruiter] ([ID],[NAME]) VALUES (
-2,'Bernardo');
-INSERT INTO [Recruiter] ([ID],[NAME]) VALUES (
-3,'Carlos');
-INSERT INTO [Department] ([ID],[NAME]) VALUES (
-1,'IT');
-INSERT INTO [Department] ([ID],[NAME]) VALUES (
-2,'Product');
-INSERT INTO [Department] ([ID],[NAME]) VALUES (
-3,'ProfessionalServices');
-INSERT INTO [Position] ([ID],[TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES (
-1,'SoftwareDeveloper','Desc2','SJO','Draft',1,1,10000,'2025-06-16',NULL,NULL);
-INSERT INTO [Position] ([ID],[TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES (
-2,'recruiter','desc','urugua','open',1,1,1000,'2025-07-03','2025-06-18 23:32:29','2025-06-18 23:32:29');
-INSERT INTO [Position] ([ID],[TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES (
-3,'3','321','uru','draft',1,1,1000,'2025-09-11','2025-06-18 23:33:56','2025-06-18 23:33:56');
-INSERT INTO [Position] ([ID],[TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES (
-5,'4','jdskla','sadjfals','draft',1,1,0,'2025-06-20','2025-06-18 23:39:07','2025-06-18 23:39:07');
-CREATE TRIGGER [fki_Position_DEPARTMENTID_Department_ID] BEFORE Insert ON [Position] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Insert on table Position violates foreign key constraint FK_Position_0_0') WHERE NOT EXISTS (SELECT * FROM Department WHERE  ID = NEW.DEPARTMENTID); END;
-CREATE TRIGGER [fku_Position_DEPARTMENTID_Department_ID] BEFORE Update ON [Position] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Update on table Position violates foreign key constraint FK_Position_0_0') WHERE NOT EXISTS (SELECT * FROM Department WHERE  ID = NEW.DEPARTMENTID); END;
-CREATE TRIGGER [fki_Position_RECRUITERID_Recruiter_ID] BEFORE Insert ON [Position] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Insert on table Position violates foreign key constraint FK_Position_1_0') WHERE NOT EXISTS (SELECT * FROM Recruiter WHERE  ID = NEW.RECRUITERID); END;
-CREATE TRIGGER [fku_Position_RECRUITERID_Recruiter_ID] BEFORE Update ON [Position] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Update on table Position violates foreign key constraint FK_Position_1_0') WHERE NOT EXISTS (SELECT * FROM Recruiter WHERE  ID = NEW.RECRUITERID); END;
+
+-- Insert sample data
+INSERT INTO [Recruiter] ([NAME]) VALUES ('Ana');
+INSERT INTO [Recruiter] ([NAME]) VALUES ('Bernardo');
+INSERT INTO [Recruiter] ([NAME]) VALUES ('Carlos');
+
+INSERT INTO [Department] ([NAME]) VALUES ('IT');
+INSERT INTO [Department] ([NAME]) VALUES ('Product');
+INSERT INTO [Department] ([NAME]) VALUES ('ProfessionalServices');
+
+INSERT INTO [Position] ([TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES 
+('Senior Software Developer','Full-stack development role focusing on modern web technologies and cloud solutions','San Jose, Costa Rica','Draft',1,1,10000,'2025-06-16',datetime('now'),datetime('now'));
+
+INSERT INTO [Position] ([TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES 
+('Technical Recruiter','Recruiting technical talent for our growing engineering team','Montevideo, Uruguay','Open',1,1,1000,'2025-07-03',datetime('now'),datetime('now'));
+
+INSERT INTO [Position] ([TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES 
+('Product Manager','Lead product strategy and development for our core platform','Montevideo, Uruguay','Draft',1,1,1000,'2025-09-11',datetime('now'),datetime('now'));
+
+INSERT INTO [Position] ([TITLE],[DESCRIPTION],[LOCATION],[STATUS],[RECRUITERID],[DEPARTMENTID],[BUDGET],[CLOSINGDATE],[CREATEDAT],[UPDATEDAT]) VALUES 
+('DevOps Engineer','Build and maintain our cloud infrastructure and CI/CD pipelines','Remote','Draft',1,1,0,'2025-06-20',datetime('now'),datetime('now'));
+
+-- Create view for position details
 CREATE VIEW PositionDetails AS
-                        SELECT 
-                            p.ID as PositionID,
-                            p.TITLE as PositionTitle,
-                            p.DESCRIPTION as PositionDescription,
-                            p.LOCATION as PositionLocation,
-                            p.STATUS as PositionStatus,
-                            p.BUDGET as PositionBudget,
-                            p.CLOSINGDATE as PositionClosingDate,
-                            p.CREATEDAT as PositionCreatedAt,
-                            p.UPDATEDAT as PositionUpdatedAt,
-                            r.ID as RecruiterID,
-                            r.NAME as RecruiterName,
-                            d.ID as DepartmentID,
-                            d.NAME as DepartmentName
-                        FROM Position p
-                        JOIN Recruiter r ON p.RECRUITERID = r.ID
-                        JOIN Department d ON p.DEPARTMENTID = d.ID;
+SELECT 
+    p.ID as PositionID,
+    p.TITLE as PositionTitle,
+    p.DESCRIPTION as PositionDescription,
+    p.LOCATION as PositionLocation,
+    p.STATUS as PositionStatus,
+    p.BUDGET as PositionBudget,
+    p.CLOSINGDATE as PositionClosingDate,
+    p.CREATEDAT as PositionCreatedAt,
+    p.UPDATEDAT as PositionUpdatedAt,
+    r.ID as RecruiterID,
+    r.NAME as RecruiterName,
+    d.ID as DepartmentID,
+    d.NAME as DepartmentName
+FROM Position p
+JOIN Recruiter r ON p.RECRUITERID = r.ID
+JOIN Department d ON p.DEPARTMENTID = d.ID;
+
 COMMIT;
 
