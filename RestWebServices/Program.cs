@@ -66,50 +66,9 @@ if (connectionStrings != null)
 }
 logger.LogInformation("Connection strings processed");
 
-
-
-// Log all configuration values (after processing)
-/*var configValues = builder.Configuration.AsEnumerable()
-    .Where(kvp => kvp.Value != null)
-    .Select(kvp => $"{kvp.Key} = {kvp.Value}");
-
-logger.LogInformation("Configuration Values: " + string.Join(", ", configValues));
-*/
-// Add CORS policy with comprehensive settings
-builder.Services.AddCors(options =>
-{
-    // Default policy that will be applied to all endpoints
-    options.DefaultPolicyName = "AllowReactApp";
-    
-    // Single policy for all environments
-    options.AddPolicy("AllowReactApp", policy =>
-    {
-        policy.WithOrigins(
-                "https://happy-stone-0deafcf10.1.azurestaticapps.net",
-                "http://localhost:3000",
-                "http://localhost:5000",
-                "http://localhost:5173",  // Vite default port
-                "http://localhost:4173",  // Vite preview port
-                "http://localhost:5246",  // Your local backend port
-                "http://localhost:53614", // React app port (Vite config)
-                "http://localhost:8080",  // Common dev port
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:5000",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:4173",
-                "http://127.0.0.1:5246",  // Your local backend port
-                "http://127.0.0.1:53614", // React app port (Vite config)
-                "http://127.0.0.1:8080")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials()
-              .WithExposedHeaders("Content-Disposition")
-              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
-    });
-});
-
-// Add services to the container.
-builder.Services.AddControllers();
+// Add after reading connection strings and before registering repositories
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SQLite";
+logger.LogInformation($"DatabaseProvider from config: {databaseProvider}");
 
 // Get the appropriate connection string based on environment
 var isProduction = environment.IsProduction();
@@ -148,21 +107,38 @@ try
 {
     logger.LogInformation("Registering Command Repository");
     logger.LogInformation("Connection string: " + connectionString);
-    // Register Command Repository
-    builder.Services.AddScoped<Lib.Repository.Repository.Commands.IPositionCommandRepository>(_ => 
+    if (databaseProvider.Equals("Oracle", StringComparison.OrdinalIgnoreCase))
     {
-        var repo = new SQLiteConnectivity.Repository.Commands.PositionCommandRepository(connectionString);
-        logger.LogInformation("PositionCommandRepository initialized successfully");
-        return repo;
-    });
-
-    // Register Query Repository
-    builder.Services.AddScoped<Lib.Repository.Repository.Queries.IPositionQueryRepository>(_ => 
+        // Register Oracle repositories
+        builder.Services.AddScoped<Lib.Repository.Repository.Commands.IPositionCommandRepository>(_ =>
+        {
+            var repo = new OracleConnectivity.Repository.Commands.PositionCommandRepository(connectionString);
+            logger.LogInformation("Oracle PositionCommandRepository initialized successfully");
+            return repo;
+        });
+        builder.Services.AddScoped<Lib.Repository.Repository.Queries.IPositionQueryRepository>(_ =>
+        {
+            var repo = new OracleConnectivity.Repository.Queries.PositionQueryRepository(connectionString);
+            logger.LogInformation("Oracle PositionQueryRepository initialized successfully");
+            return repo;
+        });
+    }
+    else
     {
-        var repo = new SQLiteConnectivity.Repository.Queries.PositionQueryRepository(connectionString);
-        logger.LogInformation("PositionQueryRepository initialized successfully");
-        return repo;
-    });
+        // Register SQLite repositories (default)
+        builder.Services.AddScoped<Lib.Repository.Repository.Commands.IPositionCommandRepository>(_ =>
+        {
+            var repo = new SQLiteConnectivity.Repository.Commands.PositionCommandRepository(connectionString);
+            logger.LogInformation("SQLite PositionCommandRepository initialized successfully");
+            return repo;
+        });
+        builder.Services.AddScoped<Lib.Repository.Repository.Queries.IPositionQueryRepository>(_ =>
+        {
+            var repo = new SQLiteConnectivity.Repository.Queries.PositionQueryRepository(connectionString);
+            logger.LogInformation("SQLite PositionQueryRepository initialized successfully");
+            return repo;
+        });
+    }
 }
 catch (Exception ex)
 {

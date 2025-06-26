@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SQLiteConnectivity\SQLiteConnectivity.csproj" />
     <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
+    <ProjectReference Include="..\OracleConnectivity\OracleTimeQuery.csproj" />
   </ItemGroup>
 
 </Project>
