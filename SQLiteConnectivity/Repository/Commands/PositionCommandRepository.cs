@@ -45,7 +45,7 @@ namespace SQLiteConnectivity.Repository.Commands
                 command.Parameters.AddWithValue("@Title", position.Title);
                 command.Parameters.AddWithValue("@DepartmentId", position.DepartmentId);
                 command.Parameters.AddWithValue("@Level", position.Level);
-                command.Parameters.AddWithValue("@Description", (object)position.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@Description", position.Description is not null ? (object)position.Description : DBNull.Value);
                 command.Parameters.AddWithValue("@IsActive", position.IsActive);
                 command.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
                 command.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
@@ -79,7 +79,7 @@ namespace SQLiteConnectivity.Repository.Commands
                 command.Parameters.AddWithValue("@Title", position.Title);
                 command.Parameters.AddWithValue("@DepartmentId", position.DepartmentId);
                 command.Parameters.AddWithValue("@Level", position.Level);
-                command.Parameters.AddWithValue("@Description", (object)position.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@Description", position.Description is not null ? (object)position.Description : DBNull.Value);
                 command.Parameters.AddWithValue("@IsActive", position.IsActive);
                 command.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
 
