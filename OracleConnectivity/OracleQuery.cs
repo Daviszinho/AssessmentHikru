@@ -174,9 +174,9 @@ namespace Hikru.Assessment.OracleConnectivity
         {
             Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [OracleQuery] Starting GetAllAsync for stored procedure: {storedProcedureName}");
             var results = new List<T>();
-            OracleConnection connection = null;
-            OracleCommand command = null;
-            OracleDataReader reader = null;
+            OracleConnection? connection = null;
+            OracleCommand? command = null;
+            OracleDataReader? reader = null;
 
             try
             {
@@ -188,7 +188,7 @@ namespace Hikru.Assessment.OracleConnectivity
                 
                 var connectionTime = (DateTime.Now - connectionStartTime).TotalMilliseconds;
                 Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [OracleQuery] Connection established in {connectionTime}ms. Connection state: {connection.State}");
-                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [OracleQuery] Connection string: {connection.ConnectionString}");
+                Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [OracleQuery] Connection string: {connection?.ConnectionString}");
 
                 // Create and configure the command for the procedure
                 command = new OracleCommand("get_all_positions", connection);

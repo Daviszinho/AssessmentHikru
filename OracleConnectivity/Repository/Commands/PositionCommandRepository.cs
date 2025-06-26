@@ -50,7 +50,7 @@ namespace OracleConnectivity.Repository.Commands
                 command.Parameters.Add("title", OracleDbType.Varchar2).Value = position.Title;
                 command.Parameters.Add("departmentId", OracleDbType.Int32).Value = position.DepartmentId;
                 command.Parameters.Add("level", OracleDbType.Varchar2).Value = position.Level;
-                command.Parameters.Add("description", OracleDbType.Varchar2).Value = (object)position.Description ?? DBNull.Value;
+                command.Parameters.Add("description", OracleDbType.Varchar2).Value = position.Description is not null ? (object)position.Description : DBNull.Value;
                 command.Parameters.Add("isActive", OracleDbType.Byte).Value = position.IsActive ? 1 : 0;
                 command.Parameters.Add("createdAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;
                 command.Parameters.Add("updatedAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;

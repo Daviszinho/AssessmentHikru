@@ -43,11 +43,19 @@ namespace Hikru.Assessment.OracleConnectivity
             Console.WriteLine($"Current Directory: {Directory.GetCurrentDirectory()}");
             
             // Get connection string from configuration
-            var connectionString = _configuration.GetConnectionString("OracleConnection") ?? 
-                                 throw new InvalidOperationException("Oracle connection string is not configured in appsettings.json");
+            if (_configuration == null)
+            {
+                throw new InvalidOperationException("Configuration has not been initialized");
+            }
+            
+            var connectionString = _configuration.GetConnectionString("OracleConnection");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("Oracle connection string is not configured in appsettings.json");
+            }
             
             // Log the connection string (without password)
-            var safeConnectionString = connectionString.Replace("Password=DavisOracle25!", "Password=*****");
+            var safeConnectionString = connectionString?.Replace("Password=DavisOracle25!", "Password=*****");
             Console.WriteLine($"Using connection string: {safeConnectionString}");
 
             try
@@ -170,10 +178,15 @@ namespace Hikru.Assessment.OracleConnectivity
 
         private static async Task<OracleConnection> ConnectWithConnectionStringAsync()
         {
+            if (_configuration == null)
+            {
+                throw new InvalidOperationException("Configuration is not initialized");
+            }
+            
             var connectionString = _configuration.GetConnectionString("OracleConnection");
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new ArgumentNullException(nameof(connectionString), "Oracle connection string is not configured in appsettings.json");
+                throw new InvalidOperationException("Oracle connection string is not configured in appsettings.json");
             }
 
             Console.WriteLine($"OracleInit: Using connection string: {connectionString.Replace("Password=", "Password=****")}");
@@ -208,7 +221,12 @@ namespace Hikru.Assessment.OracleConnectivity
                 }
 
                 // Use the connection string from appsettings.json
-                var connectionString = _configuration.GetSection("OracleSettings:ConnectionString").Value;
+                if (_configuration == null)
+                {
+                    throw new InvalidOperationException("Configuration is not initialized");
+                }
+                
+                var connectionString = _configuration.GetSection("OracleSettings:ConnectionString")?.Value;
                 if (string.IsNullOrEmpty(connectionString))
                 {
                     // Fallback to hardcoded connection string if not in config
