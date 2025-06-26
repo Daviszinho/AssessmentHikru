@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Lib.Repository\Lib.Repository.csproj" />
     <None Include="Oracle.ManagedDataAccess.dll.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

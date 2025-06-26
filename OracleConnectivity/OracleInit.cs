@@ -11,12 +11,12 @@ namespace Hikru.Assessment.OracleConnectivity
 {   
     public static class OracleInit
     {   
-        private static IConfiguration _configuration;
-        private static IHostEnvironment _environment;
+        private static IConfiguration? _configuration;
+        private static IHostEnvironment? _environment;
         private static bool _initialized = false;
         private static readonly object _lock = new object();
 
-        public static void Initialize(IConfiguration configuration, IHostEnvironment environment = null)
+        public static void Initialize(IConfiguration configuration, IHostEnvironment? environment = null)
         {
             if (!_initialized)
             {

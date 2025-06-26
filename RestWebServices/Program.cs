@@ -81,7 +81,17 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "https://happy-stone-0deafcf10.1.azurestaticapps.net",
                 "http://localhost:3000",
-                "http://localhost:5000")
+                "http://localhost:5000",
+                "http://localhost:5173",  // Vite default port
+                "http://localhost:4173",  // Vite preview port
+                "http://localhost:5246",  // Your local backend port
+                "http://localhost:8080",  // Common dev port
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:5000",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:4173",
+                "http://127.0.0.1:5246",  // Your local backend port
+                "http://127.0.0.1:8080")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials()
@@ -122,19 +132,28 @@ if (connectionString.Contains("Data Source="))
     }
 }
 
-// Register PositionRepository with SQLite
+// Register CQRS Repositories
 try
 {
-    builder.Services.AddScoped<IPositionRepository>(_ => 
+    // Register Command Repository
+    builder.Services.AddScoped<Lib.Repository.Repository.Commands.IPositionCommandRepository>(_ => 
     {
-        var repo = new PositionRepository(connectionString);
-        logger.LogInformation("PositionRepository initialized successfully");
+        var repo = new SQLiteConnectivity.Repository.Commands.PositionCommandRepository(connectionString);
+        logger.LogInformation("PositionCommandRepository initialized successfully");
+        return repo;
+    });
+
+    // Register Query Repository
+    builder.Services.AddScoped<Lib.Repository.Repository.Queries.IPositionQueryRepository>(_ => 
+    {
+        var repo = new SQLiteConnectivity.Repository.Queries.PositionQueryRepository(connectionString);
+        logger.LogInformation("PositionQueryRepository initialized successfully");
         return repo;
     });
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "Error initializing PositionRepository");
+    logger.LogError(ex, "Error initializing repositories");
     throw;
 }
 
@@ -199,17 +218,25 @@ app.Use(async (context, next) =>
     if (context.Request.Method == "OPTIONS")
     {
         var origin = context.Request.Headers["Origin"].ToString();
+        logger.LogInformation($"Preflight request from origin: {origin}");
+        
         if (!string.IsNullOrEmpty(origin) && 
             (origin.Contains("happy-stone-0deafcf10.1.azurestaticapps.net") || 
-             origin.Contains("localhost:3000")))
+             origin.Contains("localhost:") ||
+             origin.Contains("127.0.0.1:")))
         {
+            logger.LogInformation($"Allowing CORS for origin: {origin}");
             context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
             context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Cache-Control, Pragma");
             context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
             context.Response.Headers.Add("Access-Control-Max-Age", "86400");
             context.Response.StatusCode = 204; // No Content
             return;
+        }
+        else
+        {
+            logger.LogWarning($"Blocking CORS for origin: {origin}");
         }
     }
     await next();

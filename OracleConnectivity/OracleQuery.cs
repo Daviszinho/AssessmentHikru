@@ -20,15 +20,15 @@ namespace Hikru.Assessment.OracleConnectivity
         private OracleConnection? _connection;
         private bool _disposed = false;
         private string _connectionString;
-        private readonly string _configFile;
-        private readonly string _connectionName;
-        private readonly IConfiguration _configuration;
-        private readonly IHostEnvironment _environment;
+        private readonly string? _configFile;
+        private readonly string? _connectionName;
+        private readonly IConfiguration? _configuration;
+        private readonly IHostEnvironment? _environment;
 
         /// <summary>
         /// Initializes a new instance of the OracleQuery class
         /// </summary>
-        public OracleQuery(IConfiguration configuration = null, IHostEnvironment environment = null)
+        public OracleQuery(IConfiguration configuration, IHostEnvironment? environment = null)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _environment = environment;

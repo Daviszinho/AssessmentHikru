@@ -1,5 +1,5 @@
 
-using Lib.Repository.Entities;
+/*using Lib.Repository.Entities;
 namespace Lib.Repository.Repository {
     public interface IPositionRepository
     {
@@ -10,3 +10,4 @@ namespace Lib.Repository.Repository {
         Task<bool> RemovePositionAsync(int positionId);
     }
 }
+*/

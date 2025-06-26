@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PositionTable from './components/PositionsTable.tsx';
-import type { Position } from './components/PositionsTable.tsx';
+import type { Position } from './types/position';
+import { API_URL } from './config/api';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 const App: React.FC = () => {
   // Refs for focus management
@@ -29,6 +28,7 @@ const App: React.FC = () => {
 
   const fetchPositions = async () => {
     console.log('[App] Starting to fetch positions...');
+    console.log('[App] Using API URL:', API_URL);
     setIsLoading(true);
     setError(null);
     try {
@@ -49,6 +49,7 @@ const App: React.FC = () => {
       const endTime = performance.now();
       console.log(`[App] Received response in ${(endTime - startTime).toFixed(2)}ms`);
       console.log('[App] Response status:', response.status, response.statusText);
+      console.log('[App] Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -64,7 +65,24 @@ const App: React.FC = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       console.error('Error fetching positions:', errorMessage, err);
-      setError(`Failed to load positions: ${errorMessage}`);
+      
+      // Provide more specific error messages for common CORS issues
+      if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+        setError(`CORS Error: Unable to connect to the API. Please ensure:
+          1. The backend server is running
+          2. CORS is properly configured on the backend
+          3. You're using the correct API URL: ${API_URL}
+          
+          Technical details: ${errorMessage}`);
+      } else if (errorMessage.includes('CORS')) {
+        setError(`CORS Error: Cross-origin request blocked. Please check:
+          1. Backend CORS configuration allows your origin
+          2. API URL is correct: ${API_URL}
+          
+          Technical details: ${errorMessage}`);
+      } else {
+        setError(`Failed to load positions: ${errorMessage}`);
+      }
       throw err;
     } finally {
       setIsLoading(false);
@@ -210,8 +228,6 @@ const App: React.FC = () => {
       throw err; // Re-throw to be handled by the caller
     }
   };
-
-
 
   const handleExpand = (idx: number) => {
     setExpandedIndex(expandedIndex === idx ? null : idx);
