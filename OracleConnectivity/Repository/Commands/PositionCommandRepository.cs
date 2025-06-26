@@ -43,13 +43,12 @@ namespace OracleConnectivity.Repository.Commands
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
-                    INSERT INTO Position (Title, DepartmentId, Level, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (:title, :departmentId, :level, :description, :isActive, :createdAt, :updatedAt)
+                    INSERT INTO Position (Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt)
+                    VALUES (:title, :departmentId, :description, :isActive, :createdAt, :updatedAt)
                     RETURNING Id INTO :id";
 
                 command.Parameters.Add("title", OracleDbType.Varchar2).Value = position.Title;
                 command.Parameters.Add("departmentId", OracleDbType.Int32).Value = position.DepartmentId;
-                command.Parameters.Add("level", OracleDbType.Varchar2).Value = position.Level;
                 command.Parameters.Add("description", OracleDbType.Varchar2).Value = position.Description is not null ? (object)position.Description : DBNull.Value;
                 command.Parameters.Add("isActive", OracleDbType.Byte).Value = position.IsActive ? 1 : 0;
                 command.Parameters.Add("createdAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;
@@ -57,14 +56,14 @@ namespace OracleConnectivity.Repository.Commands
                 
                 // For Oracle, we'll use a sequence or RETURNING clause
                 command.CommandText = @"
-                    INSERT INTO Position (Title, DepartmentId, Level, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (:title, :departmentId, :level, :description, :isActive, :createdAt, :updatedAt)
+                    INSERT INTO Position (Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt)
+                    VALUES (:title, :departmentId, :description, :isActive, :createdAt, :updatedAt)
                     RETURNING Id INTO :id";
 
                 // For Oracle, we'll use a sequence to get the next ID
                 command.CommandText = @"
-                    INSERT INTO Position (Id, Title, DepartmentId, Level, Description, IsActive, CreatedAt, UpdatedAt)
-                    VALUES (POSITION_SEQ.NEXTVAL, :title, :departmentId, :level, :description, :isActive, :createdAt, :updatedAt)
+                    INSERT INTO Position (Id, Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt)
+                    VALUES (POSITION_SEQ.NEXTVAL, :title, :departmentId, :description, :isActive, :createdAt, :updatedAt)
                     RETURNING Id INTO :newId";
 
                 var idParam = new OracleParameter("newId", OracleDbType.Decimal, ParameterDirection.Output);
@@ -106,7 +105,6 @@ namespace OracleConnectivity.Repository.Commands
                     UPDATE Position 
                     SET Title = :title, 
                         DepartmentId = :departmentId, 
-                        Level = :level, 
                         Description = :description, 
                         IsActive = :isActive,
                         UpdatedAt = :updatedAt
@@ -114,7 +112,6 @@ namespace OracleConnectivity.Repository.Commands
 
                 command.Parameters.Add("title", OracleDbType.Varchar2).Value = position.Title;
                 command.Parameters.Add("departmentId", OracleDbType.Int32).Value = position.DepartmentId;
-                command.Parameters.Add("level", OracleDbType.Varchar2).Value = position.Level;
                 command.Parameters.Add("description", OracleDbType.Varchar2).Value = (object?)position.Description ?? DBNull.Value;
                 command.Parameters.Add("isActive", OracleDbType.Byte).Value = position.IsActive ? 1 : 0;
                 command.Parameters.Add("updatedAt", OracleDbType.TimeStamp).Value = DateTime.UtcNow;

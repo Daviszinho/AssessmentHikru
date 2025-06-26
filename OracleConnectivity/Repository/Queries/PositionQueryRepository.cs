@@ -41,7 +41,7 @@ namespace OracleConnectivity.Repository.Queries
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
-                    SELECT Id, Title, DepartmentId, Level, Description, IsActive, CreatedAt, UpdatedAt
+                    SELECT Id, Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt
                     FROM Position";
 
                 using var dbReader = await command.ExecuteReaderAsync();
@@ -77,7 +77,7 @@ namespace OracleConnectivity.Repository.Queries
                 await _connection.OpenAsync();
                 using var command = _connection.CreateCommand();
                 command.CommandText = @"
-                    SELECT Id, Title, DepartmentId, Level, Description, IsActive, CreatedAt, UpdatedAt
+                    SELECT Id, Title, DepartmentId, Description, IsActive, CreatedAt, UpdatedAt
                     FROM Position
                     WHERE Id = :id";
                 command.Parameters.Add("id", OracleDbType.Int32).Value = id;
@@ -111,7 +111,6 @@ namespace OracleConnectivity.Repository.Queries
                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                 Title = reader.GetString(reader.GetOrdinal("Title")),
                 DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                Level = reader.GetString(reader.GetOrdinal("Level")),
                 Description = !reader.IsDBNull(reader.GetOrdinal("Description")) 
                     ? reader.GetString(reader.GetOrdinal("Description")) 
                     : null,

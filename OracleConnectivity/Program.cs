@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
@@ -54,7 +54,7 @@ namespace OracleConnectivity
 
                 foreach (var position in positions)
                 {
-                    Console.WriteLine($"{position.Id,-5} | {Truncate(position.Title, 18),-20} | {position.Level,-10} | {position.DepartmentId,-15} | {(position.IsActive ? "Sí" : "No"),-10} | {position.CreatedAt:yyyy-MM-dd}");
+                    Console.WriteLine($"{position.Id,-5} | {Truncate(position.Title, 18),-20} | {position.DepartmentId,-15} | {(position.IsActive ? "Sí" : "No"),-10} | {position.CreatedAt:yyyy-MM-dd}");
                 }
 
                 // Ejemplo: Crear una nueva posición
@@ -63,7 +63,6 @@ namespace OracleConnectivity
                 {
                     Title = "Nueva Posición " + DateTime.Now.ToString("HHmmss"),
                     DepartmentId = 1,
-                    Level = "Senior",
                     Description = "Descripción de prueba",
                     IsActive = true
                 };
@@ -79,7 +78,6 @@ namespace OracleConnectivity
                     {
                         Console.WriteLine("\nDetalles de la nueva posición:");
                         Console.WriteLine($"Título: {createdPosition.Title}");
-                        Console.WriteLine($"Nivel: {createdPosition.Level}");
                         Console.WriteLine($"Departamento ID: {createdPosition.DepartmentId}");
                     }
                 }
@@ -102,3 +100,4 @@ namespace OracleConnectivity
         }
     }
 }
+*/
