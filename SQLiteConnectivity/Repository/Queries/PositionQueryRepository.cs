@@ -77,18 +77,32 @@ namespace SQLiteConnectivity.Repository.Queries
 
         private Position MapToPosition(SqliteDataReader reader)
         {
-            return new Position
+            var position = new Position
             {
-                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                Title = reader.GetString(reader.GetOrdinal("Title")),
-                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                Level = reader.GetString(reader.GetOrdinal("Level")),
-                Description = !reader.IsDBNull(reader.GetOrdinal("Description")) ? 
-                    reader.GetString(reader.GetOrdinal("Description")) : null,
-                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
-                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
+                Id = reader.GetInt32(reader.GetOrdinal("ID")),
+                Title = reader.GetString(reader.GetOrdinal("TITLE")),
+                Description = !reader.IsDBNull(reader.GetOrdinal("DESCRIPTION")) ? 
+                    reader.GetString(reader.GetOrdinal("DESCRIPTION")) : null,
+                Location = !reader.IsDBNull(reader.GetOrdinal("LOCATION")) ? 
+                    reader.GetString(reader.GetOrdinal("LOCATION")) : null,
+                DepartmentId = reader.GetInt32(reader.GetOrdinal("DEPARTMENTID")),
+                RecruiterId = reader.IsDBNull(reader.GetOrdinal("RECRUITERID")) ? 
+                    null : reader.GetInt32(reader.GetOrdinal("RECRUITERID")),
+                Status = !reader.IsDBNull(reader.GetOrdinal("STATUS")) ? 
+                    reader.GetString(reader.GetOrdinal("STATUS")) : null,
+                Budget = reader.IsDBNull(reader.GetOrdinal("BUDGET")) ? 
+                    null : reader.GetDecimal(reader.GetOrdinal("BUDGET")),
+                ClosingDate = reader.IsDBNull(reader.GetOrdinal("CLOSINGDATE")) ? 
+                    null : DateTime.Parse(reader.GetString(reader.GetOrdinal("CLOSINGDATE"))),
+                CreatedAt = DateTime.Parse(reader.GetString(reader.GetOrdinal("CREATEDAT"))),
+                UpdatedAt = DateTime.Parse(reader.GetString(reader.GetOrdinal("UPDATEDAT"))),
+                // Asumiendo que IsActive no existe en la base de datos, lo establecemos como true por defecto
+                IsActive = true,
+                // Establecer Level como cadena vacía ya que no existe en la base de datos
+                Level = ""
             };
+
+            return position;
         }
 
         public void Dispose()

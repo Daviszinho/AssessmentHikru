@@ -22,7 +22,7 @@ var logger = LoggerFactory.Create(config =>
 }).CreateLogger("ProgramStartup");
 
 // Log all environment variables (be careful with sensitive data in production)
-if (!environment.IsProduction())
+/*if (!environment.IsProduction())
 {
     logger.LogInformation("Environment Variables:" + 
         string.Join(Environment.NewLine, 
@@ -30,7 +30,7 @@ if (!environment.IsProduction())
                 .Cast<System.Collections.DictionaryEntry>()
                 .Select(e => $"{e.Key} = {e.Value}")));
 }
-
+*/
 logger.LogInformation($"Application starting in {environment.EnvironmentName} environment");
 logger.LogInformation($"Content Root: {environment.ContentRootPath}");
 logger.LogInformation($"Web Root: {environment.WebRootPath}");
@@ -226,11 +226,11 @@ app.Use(async (context, next) =>
              origin.Contains("127.0.0.1:")))
         {
             logger.LogInformation($"Allowing CORS for origin: {origin}");
-            context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
-            context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Cache-Control, Pragma");
-            context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
-            context.Response.Headers.Add("Access-Control-Max-Age", "86400");
+            context.Response.Headers.AccessControlAllowOrigin = origin;
+            context.Response.Headers.AccessControlAllowMethods = "GET, POST, PUT, DELETE, OPTIONS";
+            context.Response.Headers.AccessControlAllowHeaders = "Content-Type, Authorization, Accept, Cache-Control, Pragma";
+            context.Response.Headers.AccessControlAllowCredentials = "true";
+            context.Response.Headers.AccessControlMaxAge = "86400";
             context.Response.StatusCode = 204; // No Content
             return;
         }
