@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Position } from '../types/position';
-import { POSITION_CONSTANTS } from '../constants/positionConstants';
+// import { POSITION_CONSTANTS } from '../constants/positionConstants';
 import './PositionsTable.css';
 
 interface PositionRowProps {

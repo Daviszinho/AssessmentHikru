@@ -29,7 +29,6 @@ const PositionTable: React.FC<PositionTableProps> = React.memo(({
     validateForm,
     formatDateForBackend,
     setError,
-    setIsDeleting,
     setIsSubmitting
   } = usePositionForm();
 
