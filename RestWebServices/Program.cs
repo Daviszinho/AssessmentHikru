@@ -220,22 +220,44 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Hikru Assessment API", Version = "v1" });
 });
 
+// Get ReactAppUrl from configuration
+var reactAppUrl = builder.Configuration["ReactAppUrl"];
+if (string.IsNullOrEmpty(reactAppUrl))
+{
+    // Default value if not configured
+    reactAppUrl = "http://localhost:3000";
+}
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:53614",  // React dev server
-                "http://localhost:3000",   // Alternative React port
-                "http://localhost:5173",   // Vite default port
-                "http://127.0.0.1:53614",
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:5173"
-            )
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+        var allowedOrigins = new List<string>
+        {
+            reactAppUrl,
+            "http://localhost:3000",   // Alternative React port
+            "http://localhost:5173",   // Vite default port
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+            "https://happy-stone-0deafcf10.1.azurestaticapps.net",  // Azure Static Web App
+            "https://*.1.azurestaticapps.net"  // All Azure Static Web Apps subdomains
+        };
+
+        // Add both http and https versions if the URL starts with http://
+        if (reactAppUrl.StartsWith("http://"))
+        {
+            var httpsUrl = reactAppUrl.Replace("http://", "https://");
+            if (!allowedOrigins.Contains(httpsUrl))
+            {
+                allowedOrigins.Add(httpsUrl);
+            }
+        }
+
+        policy.WithOrigins(allowedOrigins.ToArray())
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
