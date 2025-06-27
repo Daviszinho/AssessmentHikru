@@ -31,10 +31,10 @@ namespace OracleConnectivity
                     .Build();
 
                 // Obtener cadena de conexión
-                var connectionString = configuration.GetConnectionString("OracleConnection");
+                var connectionString = configuration.GetConnectionString("OracleConnection_Development");
                 if (string.IsNullOrEmpty(connectionString))
                 {
-                    Console.WriteLine("Error: No se encontró la cadena de conexión 'OracleConnection' en la configuración.");
+                    Console.WriteLine("Error: No se encontró la cadena de conexión 'OracleConnection_Development' en la configuración.");
                     return;
                 }
 

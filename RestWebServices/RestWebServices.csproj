@@ -32,4 +32,30 @@
     <ProjectReference Include="..\OracleConnectivity\OracleTimeQuery.csproj" />
   </ItemGroup>
 
+  <!-- Post-build target to handle Oracle wallet files for production -->
+  <Target Name="PrepareOracleWalletForProduction" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Message Text="Preparing Oracle wallet files for production deployment..." Importance="high" />
+    
+    <!-- Create wallet directory in output -->
+    <MakeDir Directories="$(OutputPath)wallet" />
+    
+    <!-- Copy specific wallet files -->
+    <Copy SourceFiles="..\OracleConnectivity\wallet\tnsnames.ora" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\cwallet.sso" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\ewallet.p12" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\ewallet.pem" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\keystore.jks" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\truststore.jks" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\ojdbc.properties" DestinationFolder="$(OutputPath)wallet" />
+    <Copy SourceFiles="..\OracleConnectivity\wallet\README" DestinationFolder="$(OutputPath)wallet" />
+    
+    <!-- Remove development sqlnet.ora if it exists -->
+    <Delete Files="$(OutputPath)wallet\sqlnet.ora" Condition="Exists('$(OutputPath)wallet\sqlnet.ora')" />
+    
+    <!-- Copy and rename sqlnet.prod.ora to sqlnet.ora for production -->
+    <Copy SourceFiles="..\OracleConnectivity\wallet\sqlnet.prod.ora" DestinationFiles="$(OutputPath)wallet\sqlnet.ora" Condition="Exists('..\OracleConnectivity\wallet\sqlnet.prod.ora')" />
+    
+    <Message Text="Oracle wallet files prepared for production deployment." Importance="high" />
+  </Target>
+
 </Project>

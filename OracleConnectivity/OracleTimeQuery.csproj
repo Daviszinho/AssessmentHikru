@@ -20,4 +20,22 @@
     <None Include="Oracle.ManagedDataAccess.dll.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Include specific wallet files for deployment -->
+  <ItemGroup>
+    <None Include="wallet\tnsnames.ora" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\cwallet.sso" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\ewallet.p12" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\ewallet.pem" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\keystore.jks" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\truststore.jks" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\ojdbc.properties" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\README" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wallet\sqlnet.prod.ora" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Remove development sqlnet.ora from output -->
+  <Target Name="RemoveDevelopmentSqlnetOra" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Delete Files="$(OutputPath)wallet\sqlnet.ora" Condition="Exists('$(OutputPath)wallet\sqlnet.ora')" />
+  </Target>
+
 </Project>

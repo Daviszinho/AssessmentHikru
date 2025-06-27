@@ -22,6 +22,41 @@ var logger = LoggerFactory.Create(config =>
     config.AddDebug();
 }).CreateLogger("ProgramStartup");
 
+// Add detailed environment detection logging
+logger.LogInformation($"=== ENVIRONMENT DETECTION DEBUG ===");
+logger.LogInformation($"Environment.EnvironmentName: {environment.EnvironmentName}");
+logger.LogInformation($"Environment.IsProduction(): {environment.IsProduction()}");
+logger.LogInformation($"Environment.IsDevelopment(): {environment.IsDevelopment()}");
+logger.LogInformation($"Environment.IsStaging(): {environment.IsStaging()}");
+logger.LogInformation($"ASPNETCORE_ENVIRONMENT env var: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+logger.LogInformation($"DOTNET_ENVIRONMENT env var: {Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")}");
+logger.LogInformation($"WEBSITE_SITE_NAME env var: {Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")}");
+logger.LogInformation($"WEBSITE_HOSTNAME env var: {Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME")}");
+
+// Force environment detection from environment variables
+var forcedEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? 
+                       Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? 
+                       "Development";
+logger.LogInformation($"Forced environment detection: {forcedEnvironment}");
+
+// Additional environment checks
+logger.LogInformation($"Environment.GetEnvironmentVariable('ASPNETCORE_ENVIRONMENT'): {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}");
+logger.LogInformation($"Environment.GetEnvironmentVariable('DOTNET_ENVIRONMENT'): {Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")}");
+logger.LogInformation($"Environment.GetEnvironmentVariable('WEBSITE_SITE_NAME'): {Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")}");
+
+// Check if we're running in Azure
+var isAzure = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+logger.LogInformation($"Running in Azure: {isAzure}");
+
+// Force the environment to be Production if we're in Azure and the variable is set
+if (isAzure && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.Equals("Production", StringComparison.OrdinalIgnoreCase) == true)
+{
+    logger.LogInformation("Forcing environment to Production for Azure deployment");
+    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+}
+
+logger.LogInformation($"=== END ENVIRONMENT DETECTION DEBUG ===");
+
 // Log all environment variables (be careful with sensitive data in production)
 /*if (!environment.IsProduction())
 {
@@ -74,26 +109,46 @@ logger.LogInformation($"DatabaseProvider from config: {databaseProvider}");
 string connectionString;
 if (databaseProvider.Equals("Oracle", StringComparison.OrdinalIgnoreCase))
 {
-    connectionString = builder.Configuration.GetConnectionString("OracleConnection");
-    if (string.IsNullOrEmpty(connectionString))
-    {
-        var errorMessage = $"Oracle connection string 'OracleConnection' is not configured.";
-        logger.LogError(errorMessage);
-        throw new InvalidOperationException(errorMessage);
-    }
-    logger.LogInformation($"Using Oracle connection string.");
+    // Force production mode when running in Azure
+    var isAzureForOracle = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+    var aspNetCoreEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    var dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+    
+    // Use production if we're in Azure OR if environment variables are set to Production
+    var isProduction = isAzureForOracle || 
+                      (aspNetCoreEnv?.Equals("Production", StringComparison.OrdinalIgnoreCase) == true) ||
+                      (dotnetEnv?.Equals("Production", StringComparison.OrdinalIgnoreCase) == true);
+    
+    logger.LogInformation($"Environment detection for Oracle:");
+    logger.LogInformation($"  - Is Azure: {isAzureForOracle}");
+    logger.LogInformation($"  - ASPNETCORE_ENVIRONMENT: {aspNetCoreEnv}");
+    logger.LogInformation($"  - DOTNET_ENVIRONMENT: {dotnetEnv}");
+    logger.LogInformation($"  - Final isProduction decision: {isProduction}");
+    
+    var connectionStringName = isProduction ? "OracleConnection_Production" : "OracleConnection_Development";
+    connectionString = builder.Configuration.GetConnectionString(connectionStringName) ?? throw new InvalidOperationException($"Oracle connection string '{connectionStringName}' is not configured.");
+    logger.LogInformation($"Using Oracle connection string: {connectionStringName}");
 }
 else
 {
-    var isProduction = environment.IsProduction();
+    // Force production mode when running in Azure for SQLite too
+    var isAzureForSqlite = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+    var aspNetCoreEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    var dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+    
+    // Use production if we're in Azure OR if environment variables are set to Production
+    var isProduction = isAzureForSqlite || 
+                      (aspNetCoreEnv?.Equals("Production", StringComparison.OrdinalIgnoreCase) == true) ||
+                      (dotnetEnv?.Equals("Production", StringComparison.OrdinalIgnoreCase) == true);
+    
+    logger.LogInformation($"Environment detection for SQLite:");
+    logger.LogInformation($"  - Is Azure: {isAzureForSqlite}");
+    logger.LogInformation($"  - ASPNETCORE_ENVIRONMENT: {aspNetCoreEnv}");
+    logger.LogInformation($"  - DOTNET_ENVIRONMENT: {dotnetEnv}");
+    logger.LogInformation($"  - Final isProduction decision: {isProduction}");
+    
     var connectionStringName = isProduction ? "SQLiteConnection_Production" : "SQLiteConnection_Development";
-    connectionString = builder.Configuration.GetConnectionString(connectionStringName);
-    if (string.IsNullOrEmpty(connectionString))
-    {
-        var errorMessage = $"SQLite connection string '{connectionStringName}' is not configured.";
-        logger.LogError(errorMessage);
-        throw new InvalidOperationException(errorMessage);
-    }
+    connectionString = builder.Configuration.GetConnectionString(connectionStringName) ?? throw new InvalidOperationException($"SQLite connection string '{connectionStringName}' is not configured.");
     logger.LogInformation($"Using SQLite connection string: {connectionStringName}");
     // Log database info
     if (connectionString.Contains("Data Source="))
